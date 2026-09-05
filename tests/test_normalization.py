@@ -364,3 +364,41 @@ def test_bracketed_indices_win_over_appendix_numbering():
     assert len(segments) == 3
     assert all(segment.startswith("[") for segment in segments)
     assert not any("Young diagrams" in segment for segment in segments)
+
+
+# --- Catalogue imprints are not people -------------------------------------
+
+
+def test_an_imprint_place_is_not_read_as_an_author():
+    # "Washington, D.C." is a capitalised surname followed by what reads as a
+    # run of initials, so it matched the inverted-name form exactly and was
+    # reported as a person. A fabricated author is the worst thing this parser
+    # can produce.
+    citation = parse_citation("Washington, D.C.: Childrens Books, 1933. Curriculum-Bull-11 61p.")
+    assert citation.authors == []
+    assert citation.year == "1933"
+
+
+def test_an_abbreviated_state_in_an_imprint_is_not_read_as_an_author():
+    citation = parse_citation("Cambridge, Mass.: Harvard University Press, 1987. A Report 44p.")
+    assert citation.authors == []
+
+
+def test_a_real_author_is_still_read_when_the_title_carries_a_colon():
+    # The guard keys on a colon directly after the name. A subtitle's colon
+    # comes after the title, so it must not disarm a genuine author.
+    citation = parse_citation("Doe, Jane. The Book of Things: A Subtitle. New York: Penguin, 2001.")
+    assert [a.citation_name for a in citation.authors] == ["Doe, Jane"]
+    assert citation.title == "The Book of Things: A Subtitle"
+
+
+def test_an_inverted_author_list_still_parses_in_full():
+    citation = parse_citation(
+        "Bastidas, V. M., Emary, C., and Brandes, T., Nonequilibrium quantum phase "
+        "transitions in the Dicke model, Phys. Rev. E 87, 052110 (2012)."
+    )
+    assert [a.citation_name for a in citation.authors] == [
+        "Bastidas, V. M.",
+        "Emary, C.",
+        "Brandes, T.",
+    ]

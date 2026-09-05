@@ -82,6 +82,20 @@ _CONJUNCTION = re.compile(r"\band\b|&")
 #: A trailing "et al." that closes an author list.
 _ET_AL = re.compile(r"[ \t]*,?[ \t]*et[ \t]+al\.?", re.IGNORECASE)
 
+#: A colon directly after a candidate name, which means the name was never one.
+#:
+#: A catalogue record's imprint opens "Washington, D.C.: Childrens Books, 1933"
+#: and "Cambridge, Mass.: Harvard University Press, 1987". The place matches the
+#: inverted-name form exactly - a capitalised surname, a comma, and what reads
+#: as a run of initials - so "Washington, D.C." was reported as a person, which
+#: is the fabrication the honesty principle exists to prevent. No citation style
+#: puts a colon after an author, while every imprint puts one after its place,
+#: so the colon settles it structurally, with no list of place names to keep.
+#:
+#: The optional period absorbs an abbreviated state whose own full stop falls
+#: outside the name match, as in "Cambridge, Mass.:".
+_IMPRINT_COLON = re.compile(r"[ \t]*\.?[ \t]*:")
+
 #: The closing "Journal Abbrev. Volume, Pages (Year)." of a numbered reference,
 #: which is the dominant form in physics, chemistry and the life sciences.
 _VENUE_TAIL = re.compile(
@@ -205,7 +219,7 @@ def _match_author(
         An ``(author, end_offset)`` pair, or None when no name starts here.
     """
     inverted = _INVERTED_UNIT.match(region, position)
-    if inverted:
+    if inverted and not _IMPRINT_COLON.match(region, inverted.end()):
         author = Author(
             family=inverted.group(1).strip(),
             given=_clean_given(inverted.group(2)),
