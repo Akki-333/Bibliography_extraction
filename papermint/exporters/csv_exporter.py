@@ -18,6 +18,12 @@ def _citations_to_dataframe(citations: list[Citation]) -> pd.DataFrame:
     Returns:
         A pandas DataFrame with citation data.
     """
+    # A merged batch carries entries from several documents, and a spreadsheet
+    # that cannot say which file a row came from loses the one fact the merge
+    # destroyed. The column appears only when there is provenance to report, so
+    # a single document's export keeps exactly the columns it always had.
+    with_source = any(c.source_file for c in citations)
+
     data = []
     for citation in citations:
         if hasattr(citation, "author_string") and citation.author_string:
@@ -29,21 +35,22 @@ def _citations_to_dataframe(citations: list[Citation]) -> pd.DataFrame:
         else:
             author_string = ""
 
-        data.append(
-            {
-                "Title": citation.title or "",
-                "Authors": author_string,
-                "Year": citation.year or "",
-                "Journal": citation.journal or "",
-                "Volume": citation.volume or "",
-                "Issue": citation.issue or "",
-                "Pages": citation.pages or "",
-                "DOI": citation.doi or "",
-                "URL": citation.url or "",
-                "Publisher": citation.publisher or "",
-                "Confidence": citation.confidence or 0.0,
-            }
-        )
+        row = {
+            "Title": citation.title or "",
+            "Authors": author_string,
+            "Year": citation.year or "",
+            "Journal": citation.journal or "",
+            "Volume": citation.volume or "",
+            "Issue": citation.issue or "",
+            "Pages": citation.pages or "",
+            "DOI": citation.doi or "",
+            "URL": citation.url or "",
+            "Publisher": citation.publisher or "",
+            "Confidence": citation.confidence or 0.0,
+        }
+        if with_source:
+            row["Source file"] = citation.source_file or ""
+        data.append(row)
     return pd.DataFrame(data)
 
 

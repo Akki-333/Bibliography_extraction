@@ -48,3 +48,18 @@ def test_excel_export_returns_bytesio(sample_citations):
     assert isinstance(output, BytesIO)
     output.seek(0)
     assert len(output.read()) > 0
+
+
+def test_a_merged_export_names_each_entrys_source_file(sample_citations):
+    # A batch merges several documents into one list; a spreadsheet that cannot
+    # say which file a row came from has lost the fact the merge destroyed.
+    merged = [c.model_copy(update={"source_file": "ERIC_ED060699.pdf"}) for c in sample_citations]
+    header, first, *_ = export_csv(merged).splitlines()
+    assert header.endswith("Source file")
+    assert "ERIC_ED060699.pdf" in first
+
+
+def test_a_single_documents_export_has_no_source_column(sample_citations):
+    # Nothing to report, so nothing is added: the analyzer's export keeps the
+    # columns it always had.
+    assert "Source file" not in export_csv(sample_citations).splitlines()[0]
