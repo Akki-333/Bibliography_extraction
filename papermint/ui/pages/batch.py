@@ -15,11 +15,20 @@ entry meant scrolling through all of them. And the export — the thing most
 readers came for — sat below every expanded file, which on a five-file run put
 it thousands of pixels down.
 
-So the run is now a switcher and a pane. The rail on the left names every file
-with its outcome, one click puts that document in the pane on the right, and
-the pane carries that document's own search, ordering, paging and export. The
-merged library and its export live in a sibling tab, one click from the top of
-the results, never below them.
+So the run is now a switcher above one document. A row of pills names every
+file with how it turned out, choosing one puts that document in the pane
+below, and the pane carries that document's own search, ordering, paging and
+export. The merged library and its export live in a sibling tab, one click
+from the top of the results, never below them.
+
+**Why the switcher is not a rail.** It was one first: a narrow column of keyed
+containers beside the pane, each holding a button and a status line. That was
+wrong twice over. Splitting 1180px into a list and a two-thirds pane left
+academic filenames elided in the list and the citation cards cramped in the
+pane; and a stack of keyed containers is a layout Streamlit gives a page no
+reliable way to control, so the status lines overlapped the entries beneath
+them. ``st.pills`` is a single widget that owns its own selection, cannot
+overlap itself, and hands the pane the whole width of the page.
 """
 
 from __future__ import annotations
@@ -44,11 +53,9 @@ from papermint.ui.components.file_uploader import (
     upload_signature,
 )
 from papermint.ui.components.primitives import (
-    NoticeTone,
     Stat,
     document_header,
     empty_state,
-    micro_note,
     notice,
     page_header,
     section_header,
@@ -63,8 +70,8 @@ logger = logging.getLogger(__name__)
 _SIGNATURE_KEY = "pm_batch_signature"
 _RESULT_KEY = "pm_batch_result"
 
-#: Which file the pane is showing. Not a widget key, so Streamlit never
-#: collects it and it needs no shadow copy.
+#: Which file the pane is showing. The switcher widget owns this key, so it is
+#: mirrored across page switches like every other widget value.
 _SELECTED_KEY = "pm_batch_file"
 
 #: Widget namespaces for the two citation browsers this page renders.
@@ -75,20 +82,14 @@ _LIB_PREFIX = "pm_batch_lib"
 #: analyzer page: Streamlit collects the state of any widget it did not draw.
 _STICKY_KEYS = (
     "pm_batch_reading_mode",
+    _SELECTED_KEY,
     *browser_keys(_DOC_PREFIX),
     *browser_keys(_LIB_PREFIX),
 )
 
-#: Above this many files the switcher becomes its own scroll region, so the
-#: rail can never be taller than a screen and the pane beside it stays in view.
-_RAIL_SCROLLS_ABOVE = 7
-
-#: Height of that scroll region, in pixels.
-_RAIL_HEIGHT = 460
-
-#: How much of a filename the rail shows before eliding it. The full name is
-#: in the button's tooltip and at the head of the pane.
-_RAIL_NAME_CHARS = 30
+#: How much of a filename the switcher shows before eliding it. The name is
+#: repeated in full at the head of the pane, so nothing is lost.
+_SWITCHER_NAME_CHARS = 34
 
 
 #: The reader's override of the classifier, applied to every file in the batch.
@@ -225,33 +226,52 @@ def _render_summary(result: BatchResult) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _outcome(entry: BatchFileResult) -> tuple[str, str, NoticeTone]:
+def _outcome(entry: BatchFileResult) -> tuple[str, str]:
     """Describe one file's outcome for the switcher.
 
     Args:
         entry: The file's result.
 
     Returns:
-        A ``(material icon, one-line note, tone)`` triple.
+        A ``(material icon, short status)`` pair. The status is a count
+        wherever there is one, so the run reads as a row of numbers, and the
+        two ways of finding nothing stay distinguishable from each other.
     """
     if not entry.succeeded:
-        return ":material/error:", "Could not be read", "critical"
+        return ":material/error:", "failed"
 
     document = entry.result
     if document is None or not document.citations:
-        return ":material/description:", "No bibliography", "neutral"
+        return ":material/description:", "0"
 
-    found = document.citation_count
-    plural = "" if found == 1 else "s"
-    note = f"{found} reference{plural} · {document.average_confidence:.0%} read"
-    return ":material/library_books:", note, "neutral"
+    return ":material/library_books:", str(document.citation_count)
 
 
-def _selected_index(result: BatchResult) -> int:
-    """Return the index of the file the pane should show.
+def _switcher_label(entry: BatchFileResult) -> str:
+    """Return one file's label in the document switcher.
 
-    A remembered selection can outlive the run it belonged to, so it is
-    clamped rather than trusted.
+    Args:
+        entry: The file's result.
+
+    Returns:
+        The pill's markdown label.
+    """
+    glyph, status = _outcome(entry)
+    return f"{glyph} {clamp(entry.filename, _SWITCHER_NAME_CHARS)} · {status}"
+
+
+def _render_switcher(result: BatchResult) -> int:
+    """Render the document switcher and return the file it selects.
+
+    The widget owns the selection, so moving between documents costs the page
+    no rerun of its own and the choice survives a page switch through the same
+    sticky-state mechanism as every other widget. ``required`` means the
+    selection cannot be emptied, so there is always a document in the pane.
+
+    A remembered index can outlive the run it belonged to — file three of the
+    last upload is not file three of this one — so it is repaired before the
+    widget is created, which is the only moment Streamlit accepts a
+    programmatic value.
 
     Args:
         result: The aggregated batch result.
@@ -259,54 +279,20 @@ def _selected_index(result: BatchResult) -> int:
     Returns:
         A valid index into ``result.files``.
     """
-    current = st.session_state.get(_SELECTED_KEY, 0)
-    if not isinstance(current, int) or not 0 <= current < result.file_count:
-        current = 0
-    st.session_state[_SELECTED_KEY] = current
-    return current
+    options = list(range(result.file_count))
+    current = st.session_state.get(_SELECTED_KEY)
+    if not isinstance(current, int) or current not in options:
+        st.session_state[_SELECTED_KEY] = 0
 
-
-def _render_rail(result: BatchResult, current: int) -> None:
-    """Render the file switcher.
-
-    Each entry is a full-width button carrying the file's name and, beneath
-    it, one line saying how that file turned out. The selected entry is marked
-    by its container's key, which is what the stylesheet targets: Streamlit
-    gives a keyed container an ``st-key-`` class, and a page cannot otherwise
-    style one widget differently from its siblings.
-
-    Args:
-        result: The aggregated batch result.
-        current: The index of the selected file.
-    """
-    # Deliberately not a section heading: its top margin would drop the rail
-    # a step below the document name it sits beside, and the run's own file
-    # count is already in the statistics above.
-    files = result.file_count
-    micro_note(f"{files} file{'' if files == 1 else 's'} in this run")
-
-    scrolls = result.file_count > _RAIL_SCROLLS_ABOVE
-    rail = (
-        st.container(height=_RAIL_HEIGHT, border=False, key="pmrail")
-        if scrolls
-        else st.container(key="pmrail")
+    chosen = st.pills(
+        "Documents in this run",
+        options,
+        required=True,
+        format_func=lambda index: _switcher_label(result.files[index]),
+        key=_SELECTED_KEY,
+        label_visibility="collapsed",
     )
-
-    with rail:
-        for index, entry in enumerate(result.files):
-            glyph, note, tone = _outcome(entry)
-            state = "on" if index == current else "off"
-            with st.container(key=f"pmfile-{state}-{index}"):
-                if st.button(
-                    clamp(entry.filename, _RAIL_NAME_CHARS),
-                    key=f"pm_batch_pick_{index}",
-                    icon=glyph,
-                    use_container_width=True,
-                    help=entry.filename,
-                ):
-                    st.session_state[_SELECTED_KEY] = index
-                    st.rerun()
-                micro_note(note, tone=tone)
+    return chosen if isinstance(chosen, int) else 0
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +309,7 @@ def _render_pane(entry: BatchFileResult) -> None:
     document = entry.result
     citations = list(document.citations) if document else []
 
-    head, actions = st.columns([5, 2])
+    head, actions = st.columns([4, 1], vertical_alignment="center")
     with head:
         chips: list[tuple[str, str]] = []
         if document is not None:
@@ -336,12 +322,14 @@ def _render_pane(entry: BatchFileResult) -> None:
         document_header(entry.filename, chips)
     with actions:
         if citations:
-            with st.popover("Export this file", use_container_width=True):
+            with st.popover("Export", use_container_width=True):
                 render_compact_export(
                     citations,
                     key_prefix="pm_batch_doc_export",
                     default_name=safe_filename(entry.filename.rsplit(".", 1)[0]),
                 )
+
+    st.divider()
 
     if not entry.succeeded:
         notice("This file was skipped", entry.error, tone="critical")
@@ -437,12 +425,7 @@ def _render_run(result: BatchResult) -> None:
         if not result.files:
             empty_state("Nothing in this run", "No files were processed.", icon_name="layers")
         else:
-            current = _selected_index(result)
-            rail, pane = st.columns([1, 2.4], gap="medium")
-            with rail:
-                _render_rail(result, current)
-            with pane:
-                _render_pane(result.files[current])
+            _render_pane(result.files[_render_switcher(result)])
     with library_tab:
         _render_library(result)
 

@@ -961,7 +961,7 @@ def _components() -> str:
 .pm-doc-head {
     display: grid;
     gap: var(--pm-space-3);
-    padding-bottom: var(--pm-space-2);
+    padding: var(--pm-space-1) 0;
 }
 .pm-doc-name {
     font-family: var(--pm-font-text);
@@ -977,53 +977,43 @@ def _components() -> str:
     color: var(--pm-color-text-muted);
 }
 
-.pm-micro {
-    font-size: var(--pm-text-xs);
-    line-height: 1.5;
-    font-variant-numeric: tabular-nums;
-    color: var(--pm-micro-tint, var(--pm-color-text-faint));
-}
+/* The document switcher.
 
-/* The switcher itself. Streamlit's own gap between stacked elements is a
-   whole rem, which reads as a list of unrelated buttons rather than one
-   control, so the rail and each entry set their own. */
-[data-testid="stVerticalBlock"][class*="st-key-pmrail"] { gap: var(--pm-space-1); }
-
-/* One entry. It is a keyed container because Streamlit gives a page no way to
-   style one button differently from its siblings; the key carries the
-   selected state and the stylesheet reads it off the st-key- class. */
-[data-testid="stVerticalBlock"][class*="st-key-pmfile-"] {
-    gap: 0;
-    border-left: 2px solid transparent;
-    border-radius: 0 var(--pm-radius-sm) var(--pm-radius-sm) 0;
-    padding: var(--pm-space-2) var(--pm-space-1);
-    transition: background var(--pm-motion-fast), border-color var(--pm-motion-fast);
+   This was a rail of keyed containers, one per file, each holding a button and
+   a status line. Every rule it needed fought the framework: Streamlit owns the
+   gap between stacked elements, owns the button's chrome, and gives a page no
+   way to address one entry among siblings except through its container key. The
+   entries overlapped anyway. It is now a single `st.pills` widget, which owns
+   its own selection and lays its own options out, so what is left here is
+   colour and shape - the things a stylesheet is for. */
+[data-testid="stButtonGroup"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pm-space-2);
+    margin-bottom: var(--pm-space-2);
 }
-[data-testid="stVerticalBlock"][class*="st-key-pmfile-"]:hover {
-    background: var(--pm-fill-accent-08);
-}
-[class*="st-key-pmfile-"] .stButton button {
-    justify-content: flex-start;
-    text-align: left;
-    background: transparent;
-    border-color: transparent;
-    padding: 0 var(--pm-space-2);
-    font-size: var(--pm-text-sm);
-    color: var(--pm-color-text-muted);
-}
-[class*="st-key-pmfile-"] .stButton button:hover {
-    background: transparent;
-    border-color: transparent;
-    color: var(--pm-color-accent-bright);
-}
-[class*="st-key-pmfile-"] .pm-micro { padding-left: var(--pm-space-8); }
-
-[data-testid="stVerticalBlock"][class*="st-key-pmfile-on-"] {
+[data-testid="stBaseButton-pills"],
+[data-testid="stBaseButton-pillsActive"] {
+    border-radius: var(--pm-radius-pill);
+    border: 1px solid var(--pm-color-border);
     background: var(--pm-color-surface);
-    border-left-color: var(--pm-color-accent);
+    color: var(--pm-color-text-muted);
+    font-family: var(--pm-font-ui);
+    font-size: var(--pm-text-sm);
+    font-weight: 500;
+    padding: var(--pm-space-2) var(--pm-space-4);
+    transition: border-color var(--pm-motion-fast), background var(--pm-motion-fast),
+                color var(--pm-motion-fast);
 }
-[class*="st-key-pmfile-on-"] .stButton button {
+[data-testid="stBaseButton-pills"]:hover {
+    border-color: var(--pm-color-border-strong);
+    background: var(--pm-color-surface-raised);
     color: var(--pm-color-text);
+}
+[data-testid="stBaseButton-pillsActive"] {
+    border-color: var(--pm-fill-accent-24);
+    background: var(--pm-fill-accent-14);
+    color: var(--pm-color-accent-bright);
     font-weight: 600;
 }
 

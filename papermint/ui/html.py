@@ -87,13 +87,16 @@ def clamp(text: str, limit: int) -> str:
         text: The text to shorten.
         limit: Maximum number of characters.
 
+    Punctuation left dangling at the cut is dropped first, so a clipped
+    filename reads ``report_2019…`` rather than ``report_2019.…``.
+
     Returns:
         The text, ending in a single-character ellipsis when it was cut.
     """
     text = " ".join(str(text).split())
     if len(text) <= limit:
         return text
-    return text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+    return text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-.") + "…"
 
 
 def dot_join(*parts: str) -> str:

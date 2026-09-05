@@ -37,7 +37,7 @@ from papermint.ui.components.progress import _flow_markup
 from papermint.ui.html import clamp, compact, dot_join, esc
 from papermint.ui.icons import available_icons, icon
 from papermint.ui.navigation import route_names
-from papermint.ui.pages.batch import _outcome
+from papermint.ui.pages.batch import _outcome, _switcher_label
 from papermint.ui.styles import build_stylesheet
 from papermint.ui.theme import COLOR, band_color, css_variables
 
@@ -449,9 +449,18 @@ def test_the_batch_run_shows_one_document_at_a_time():
     assert "paper.pdf" in heads[0]
 
 
+def test_the_switcher_offers_every_file_in_the_run():
+    # One widget, not one container per file: a rail of keyed containers is
+    # what overlapped its own entries.
+    harness = _batch_harness()
+    switcher = harness.pills[0]
+    assert len(switcher.options) == 3
+    assert switcher.value == 0
+
+
 def test_choosing_a_document_puts_it_in_the_pane():
     harness = _batch_harness()
-    harness.button(key="pm_batch_pick_1").click().run()
+    harness.pills[0].set_value(1).run()
 
     assert harness.session_state["pm_batch_file"] == 1
     heads = _doc_heads(harness)
@@ -470,7 +479,7 @@ def test_the_merged_export_is_not_below_the_documents():
 
 def test_a_file_that_failed_is_explained_in_its_own_pane():
     harness = _batch_harness()
-    harness.button(key="pm_batch_pick_2").click().run()
+    harness.pills[0].set_value(2).run()
 
     assert harness.session_state["pm_batch_file"] == 2
     assert any("could not be opened" in m.value for m in harness.markdown)
@@ -484,9 +493,18 @@ def test_a_selection_left_over_from_a_longer_run_is_pulled_back_into_range():
 
 def test_the_switcher_says_how_each_file_turned_out():
     files = _batch_run().files
-    assert _outcome(files[0])[1] == "1 reference · 90% read"
-    assert _outcome(files[1])[1] == "No bibliography"
-    assert _outcome(files[2])[1:] == ("Could not be read", "critical")
+    # A count wherever there is one, so the run reads as a row of numbers, and
+    # "found nothing" stays distinct from "could not be read".
+    assert _outcome(files[0])[1] == "1"
+    assert _outcome(files[1])[1] == "0"
+    assert _outcome(files[2])[1] == "failed"
+    assert len({_outcome(f)[0] for f in files}) == 3
+
+
+def test_the_switcher_names_the_file_and_its_count():
+    label = _switcher_label(_batch_run().files[0])
+    assert "paper.pdf" in label
+    assert label.endswith("· 1")
 
 
 def test_a_merged_listing_names_the_file_each_entry_came_from(citation):

@@ -133,8 +133,8 @@ references, correct any of them inline, then export.
 
 **Batch processing.** Upload many. Each file is processed independently, so a
 corrupt PDF is reported against itself instead of aborting the run. Results
-open as a workbench rather than a stack: a rail on the left names every file
-with how it turned out, one click puts that document in the pane beside it
+open as a workbench rather than a stack: a row of pills names every file with
+how many references it gave up, choosing one opens that document full width
 with its own search, sort, paging and export, and the merged bibliography for
 the whole run is a tab away rather than below everything.
 
@@ -347,9 +347,9 @@ PaperMint/
 │       ├── state.py                # Widget state that survives a page switch
 │       ├── components/             # primitives, citation_card, citation_browser, export_panel, progress, file_uploader
 │       └── pages/                  # home, extract, batch, style_studio, about
-└── tests/                          # 445 tests, no network calls
+└── tests/                          # 447 tests, no network calls
     ├── test_architecture.py        # Enforces the layering rules (241)
-    ├── test_ui.py                  # Components, state and every page (53)
+    ├── test_ui.py                  # Components, state and every page (55)
     ├── test_normalization.py       # Text repair and parser guards (40)
     ├── test_parsers.py             # Detection and multi-block collection (40)
     ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
@@ -479,7 +479,7 @@ in memory with PyMuPDF.
 | Suite | Tests | Covers |
 |:---|---:|:---|
 | `test_architecture.py` | 241 | Every layering and coding rule, by parsing each module with `ast` |
-| `test_ui.py` | 53 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
+| `test_ui.py` | 55 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
 | `test_normalization.py` | 40 | Text repair, parser guards, surname particles |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
 | `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
@@ -504,6 +504,26 @@ in memory with PyMuPDF.
 `Citation.source_file` is already populated by the pipeline and is shown on
 every entry in the batch page's merged library, so both the data and the
 surface for phase 4 are in place. Batch processing is currently sequential.
+
+---
+
+## What changed in 2.1.2
+
+The batch page's document switcher.
+
+**Changed** - the switcher was a rail of per-file containers beside a
+two-thirds pane. Its entries overlapped one another, its labels would not
+align, and academic filenames did not fit the width it had. It is now a single
+row of pills above a full-width pane: one widget that owns its own selection,
+cannot overlap itself, keeps the choice across a page switch, and gives the
+citation cards the whole page. Each pill names its file and how many
+references came out of it.
+
+**Removed** - `micro_note()`, whose only caller was the rail, and every
+stylesheet rule that had accumulated trying to make the rail behave.
+
+**Fixed** - a clipped filename no longer reads `report_2019.` before its
+ellipsis.
 
 ---
 

@@ -143,21 +143,6 @@ def document_header(title: str, chips: list[tuple[str, str]], *, note: str = "")
     render("".join(parts))
 
 
-def micro_note(text: str, *, tone: NoticeTone = "neutral") -> None:
-    """Render a single tinted line of status.
-
-    This is the smallest thing the design system says: one line under a
-    compact list entry, giving its outcome without costing a row of its own.
-
-    Args:
-        text: The line to show.
-        tone: The visual tone, which sets the text colour.
-    """
-    tint, _fill = _TONE_STYLE.get(tone, _TONE_STYLE["neutral"])
-    colour = COLOR["text-faint"] if tone == "neutral" else tint
-    render(f'<div class="pm-micro" style="--pm-micro-tint:{colour};">{esc(text)}</div>')
-
-
 def chip_row(chips: list[tuple[str, str]], *, accent_first: bool = False) -> None:
     """Render a row of small labelled chips.
 
@@ -308,7 +293,6 @@ __all__ = [
     "definition_list",
     "document_header",
     "empty_state",
-    "micro_note",
     "notice",
     "page_header",
     "prose",
