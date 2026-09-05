@@ -38,6 +38,7 @@ from papermint.ui.html import clamp, compact, dot_join, esc
 from papermint.ui.icons import available_icons, icon
 from papermint.ui.navigation import route_names
 from papermint.ui.pages.batch import _outcome, _switcher_label
+from papermint.ui.pages.style_studio import _count
 from papermint.ui.styles import build_stylesheet
 from papermint.ui.theme import COLOR, band_color, css_variables
 
@@ -535,3 +536,49 @@ def test_the_browser_finds_an_entry_by_the_file_it_came_from(citation):
     entry = citation.model_copy(update={"source_file": "ERIC_ED060699.pdf"})
     assert _matches(entry, "eric_ed060699")
     assert not _matches(entry, "somewhere else")
+
+
+# --- The reference formatter -----------------------------------------------
+
+_STYLES_SCRIPT = (
+    "from papermint.ui.styles import inject_custom_css\n"
+    "from papermint.ui.navigation import build_navigation\n"
+    "inject_custom_css()\n"
+    "build_navigation(only='styles').run()\n"
+)
+
+
+def test_a_count_agrees_with_its_noun():
+    # "1 entries" and "1 references" were reaching the notices and the Word
+    # document's subtitle.
+    assert _count(1, "entry") == "1 entry"
+    assert _count(117, "entry") == "117 entries"
+    assert _count(1, "reference") == "1 reference"
+    assert _count(2, "reference") == "2 references"
+    assert _count(1, "file") == "1 file"
+    assert _count(5, "file") == "5 files"
+
+
+def test_the_formatter_can_take_the_references_from_a_batch():
+    # Until now the page read only the analyzer's session key, so a reader who
+    # had processed a batch was offered nothing but the paste box - which is
+    # how they came to paste a card's title and conclude the two screens
+    # disagreed about the same reference.
+    harness = AppTest.from_string(_STYLES_SCRIPT, default_timeout=120)
+    harness.session_state["pm_batch_result"] = _batch_run()
+    harness.run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+
+    assert "The batch I processed" in harness.radio[0].options
+    assert harness.radio[0].value == "The batch I processed"
+    assert any("1 reference" in c.value for c in harness.caption)
+
+
+def test_the_formatter_narrows_a_long_list_and_says_so():
+    harness = AppTest.from_string(_STYLES_SCRIPT, default_timeout=120)
+    harness.session_state["pm_batch_result"] = _batch_run()
+    harness.run()
+    harness.text_input(key="pm_style_filter").set_value("nothing matches this").run()
+
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+    assert any("Nothing matches that filter" in m.value for m in harness.markdown)
