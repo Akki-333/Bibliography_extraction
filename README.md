@@ -138,7 +138,8 @@ how many references it gave up, choosing one opens that document full width
 with its own search, sort, paging and export, and the merged bibliography for
 the whole run is a tab away rather than below everything.
 
-**Reference formatter.** Takes the references you just extracted, or one you paste,
+**Reference formatter.** Takes the references from the document you analysed,
+from the batch you processed, or one you paste,
 and sets them as a finished reference list in APA, MLA, IEEE or Chicago, with
 the same entry shown four ways for comparison. Beside it is an account of what
 that style is for and how an entry is built. Nothing is invented: an element
@@ -347,10 +348,10 @@ PaperMint/
 │       ├── state.py                # Widget state that survives a page switch
 │       ├── components/             # primitives, citation_card, citation_browser, export_panel, progress, file_uploader
 │       └── pages/                  # home, extract, batch, style_studio, about
-└── tests/                          # 447 tests, no network calls
+└── tests/                          # 456 tests, no network calls
     ├── test_architecture.py        # Enforces the layering rules (241)
-    ├── test_ui.py                  # Components, state and every page (55)
-    ├── test_normalization.py       # Text repair and parser guards (40)
+    ├── test_ui.py                  # Components, state and every page (58)
+    ├── test_normalization.py       # Text repair and parser guards (44)
     ├── test_parsers.py             # Detection and multi-block collection (40)
     ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
     ├── test_formatters.py          # Style rendering and its honesty rules (23)
@@ -479,13 +480,13 @@ in memory with PyMuPDF.
 | Suite | Tests | Covers |
 |:---|---:|:---|
 | `test_architecture.py` | 241 | Every layering and coding rule, by parsing each module with `ast` |
-| `test_ui.py` | 55 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
-| `test_normalization.py` | 40 | Text repair, parser guards, surname particles |
+| `test_ui.py` | 58 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
+| `test_normalization.py` | 44 | Text repair, parser guards, surname particles, catalogue imprints |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
 | `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
 | `test_formatters.py` | 23 | Style rendering, list ordering, the honesty rules |
 | `test_models.py` | 11 | Schema, properties, cite keys |
-| `test_exporters.py` | 7 | Every format serialises |
+| `test_exporters.py` | 9 | Every format serialises; merged exports name their source file |
 | `test_enrichment.py` | 5 | CrossRef against mocks |
 
 ---
@@ -504,6 +505,34 @@ in memory with PyMuPDF.
 `Citation.source_file` is already populated by the pipeline and is shown on
 every entry in the batch page's merged library, so both the data and the
 surface for phase 4 are in place. Batch processing is currently sequential.
+
+---
+
+## What changed in 2.1.3
+
+A fabricated author, and the route that was missing beside it.
+
+**Fixed** - `Washington, D.C.` was being reported as an author. A catalogue
+imprint opens `Washington, D.C.: Childrens Books, 1933`, and the place matches
+the inverted-name form exactly: a capitalised surname, a comma, a run of
+initials. Because the invented author filled the field confidence weighs most
+heavily, the worst-parsed entry on the page carried the highest badge. The
+guard is structural - no citation style puts a colon after an author, every
+imprint puts one after its place - so there is no list of place names to keep.
+
+**Changed** - the reference formatter can now take its references from a batch,
+not only from the analyzer. A reader who had run a batch was previously offered
+nothing but the paste box. It also gained a narrowing box, so one reference can
+be found in a three-hundred-entry run, and the downloads contain exactly what
+the box leaves on screen.
+
+**Fixed** - counts now agree with their nouns: "1 entry", not "1 entries", in
+the notices and in the Word document's subtitle; and "This entry is missing an
+element" rather than "1 of 1 entries are missing an element".
+
+**Added** - a `Source file` column on merged CSV and Excel exports, present
+only when there is provenance to report, so a single document's export keeps
+the columns it always had.
 
 ---
 
