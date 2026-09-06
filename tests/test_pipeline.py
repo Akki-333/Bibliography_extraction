@@ -376,3 +376,35 @@ def test_discarded_segments_are_quarantined_and_counted():
     assert citations[0].authors[0].family == "Smith"
     assert len(discarded) == 2
     assert all(entry.raw_text for entry in discarded)
+
+
+def test_a_batch_returns_its_files_in_upload_order():
+    # Files are processed concurrently, so completion order is not upload
+    # order. Results are written back by index; this is what guarantees the
+    # switcher and the merged export still match what the reader uploaded.
+    service = PipelineService()
+    documents = [
+        DocumentInput(filename=f"{index:02d}.txt", data=b"", mime_type="text/plain")
+        for index in range(12)
+    ]
+    result = service.process_batch(documents)
+    assert [entry.filename for entry in result.files] == [d.filename for d in documents]
+
+
+def test_a_batch_isolates_every_failure_under_concurrency():
+    # Each worker must return a BatchFileResult, never raise into the pool.
+    service = PipelineService()
+    documents = [
+        DocumentInput(filename=f"broken{index}.xyz", data=b"not a document", mime_type="")
+        for index in range(8)
+    ]
+    result = service.process_batch(documents)
+    assert result.file_count == 8
+    assert result.error_count == 8
+    assert all(entry.error for entry in result.files)
+
+
+def test_an_empty_batch_is_not_an_error():
+    result = PipelineService().process_batch([])
+    assert result.file_count == 0
+    assert result.citations == []

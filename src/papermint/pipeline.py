@@ -19,10 +19,11 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
 
-from papermint.config import DEFAULT_SUMMARY_SENTENCES
+from papermint.config import BATCH_MAX_WORKERS, DEFAULT_SUMMARY_SENTENCES
 from papermint.errors import EmptyDocumentError, PaperMintError, ParsingError
 from papermint.extractors.registry import (
     resolve_extractor,
@@ -468,6 +469,37 @@ class PipelineService:
             return [parse_citation(s, style) for s in segments if s.strip()]
         return [self.parse_reference(segment)]
 
+    def _process_one(self, document: DocumentInput, options: PipelineOptions) -> BatchFileResult:
+        """Process one file in a batch, converting any failure into a result.
+
+        This is the isolation boundary the batch promise rests on: a corrupt
+        file becomes a recorded error, never an exception that escapes into the
+        run. It is also what a worker thread executes, so nothing but a
+        ``BatchFileResult`` ever crosses back.
+
+        Args:
+            document: The file to process.
+            options: The processing options.
+
+        Returns:
+            The file's result, successful or failed.
+        """
+        try:
+            return BatchFileResult(
+                filename=document.filename,
+                result=self.process_document(document, options),
+            )
+        except PaperMintError as exc:
+            logger.warning("Batch item %s failed: %s", document.filename, exc)
+            return BatchFileResult(filename=document.filename, error=str(exc), error_kind=exc.kind)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.exception("Unexpected failure on %s", document.filename)
+            return BatchFileResult(
+                filename=document.filename,
+                error=f"Unexpected failure: {exc}",
+                error_kind="unexpected",
+            )
+
     def process_batch(
         self,
         documents: Sequence[DocumentInput] | Iterable[DocumentInput],
@@ -492,36 +524,36 @@ class PipelineService:
         opts = options or self.options
         items = list(documents)
         started = time.perf_counter()
-        results: list[BatchFileResult] = []
 
-        for index, document in enumerate(items):
-            if on_file is not None:
-                try:
-                    on_file(index, len(items), document.filename)
-                except Exception:  # pragma: no cover - presentation only
-                    logger.debug("Batch callback raised; continuing.", exc_info=True)
+        if not items:
+            return BatchResult(files=[], duration_ms=0)
 
-            try:
-                result = self.process_document(document, opts)
-                results.append(BatchFileResult(filename=document.filename, result=result))
-            except PaperMintError as exc:
-                logger.warning("Batch item %s failed: %s", document.filename, exc)
-                results.append(
-                    BatchFileResult(
-                        filename=document.filename,
-                        error=str(exc),
-                        error_kind=exc.kind,
-                    )
-                )
-            except Exception as exc:  # pragma: no cover - defensive
-                logger.exception("Unexpected failure on %s", document.filename)
-                results.append(
-                    BatchFileResult(
-                        filename=document.filename,
-                        error=f"Unexpected failure: {exc}",
-                        error_kind="unexpected",
-                    )
-                )
+        workers = min(BATCH_MAX_WORKERS, len(items))
+        slots: list[BatchFileResult | None] = [None] * len(items)
+        finished = 0
+
+        # Files are independent by construction - each already isolates its own
+        # errors - so they run in parallel. Threads rather than processes
+        # because the expensive work releases the GIL anyway: PyMuPDF decodes
+        # in C and Tesseract runs as a subprocess. Each result is written back
+        # by index, so the output order is the upload order however the threads
+        # happen to finish.
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="papermint") as pool:
+            futures = {
+                pool.submit(self._process_one, document, opts): index
+                for index, document in enumerate(items)
+            }
+            for future in as_completed(futures):
+                index = futures[future]
+                slots[index] = future.result()
+                if on_file is not None:
+                    try:
+                        on_file(finished, len(items), items[index].filename)
+                    except Exception:  # pragma: no cover - presentation only
+                        logger.debug("Batch callback raised; continuing.", exc_info=True)
+                finished += 1
+
+        results = [entry for entry in slots if entry is not None]
 
         return BatchResult(
             files=results,
