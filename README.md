@@ -1,78 +1,46 @@
 # PaperMint
 
-**Turn unstructured academic documents into structured, exportable bibliographic records.**
+**Extracts citations from academic documents without inventing any.**
 
-PDF, PNG, JPEG, Word and PowerPoint go in. BibTeX, RIS, CSV, Excel, Word and PDF
-come out, with a document summary and optional CrossRef enrichment.
+PDF, image, Word and PowerPoint go in. BibTeX, RIS, CSV, Excel, Word and PDF come
+out, with a document summary and a finished reference list set in APA, MLA, IEEE
+or Chicago.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-34D399.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-233%20passing-34D399.svg)](tests/)
+[![Ruff](https://img.shields.io/badge/lint-ruff-34D399.svg)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-34D399.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-345%20passing-34D399.svg)](tests/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-app-34D399.svg)](https://streamlit.io)
+
+![The PaperMint document analyzer](assets/UI.png)
 
 ---
 
-## The problem
+## Why it exists
 
-Researchers spend hours retyping references. They copy out of PDFs, wrestle with
-BibTeX, and check every field by hand.
+Citation tools guess. Give one a malformed reference and it returns something
+plausible — a city as an author, a page count as a title — because returning
+*something* looks better than returning nothing. You then check every field by
+hand, which is the work you were trying to avoid.
 
-PaperMint reads the document, isolates its bibliography, parses each entry into
-structured fields, and exports the lot. What separates it from a regex script is
-that **it tells you how much of each entry it could actually read**, and it never
-fills a gap with a guess.
+PaperMint refuses to guess. **A field it cannot read confidently is left empty
+and reported as missing.** A document with no bibliography produces zero
+citations and says so.
 
----
+That rule is enforced, not aspired to:
 
-## The governing principle: honesty over completeness
-
-A field that cannot be read confidently is left empty and reported as missing. It
-is never filled with a plausible-looking fragment. A document with no bibliography
-produces zero citations and says so.
-
-This is not a slogan. It shapes every parser:
-
-- A title candidate is **rejected** when it is a page locator, an author list, a
-  DOI, a URL, a publisher, or shorter than two real words.
-- A page range is **rejected** when it is a span of two four-digit calendar years,
-  which is how `1700-2000` in a book title used to become page numbers.
-- General-purpose named entity recognition is **not used** for author extraction.
-  It reports place names and common nouns as people, and a fabricated author is
-  worse than a missing one.
-
-Every extractor proposes candidates in descending order of reliability and
-validates each one before accepting it. A rejected candidate leaves the field
-empty, which the interface renders honestly as *missing*.
-
----
-
-## What it does
-
-| | |
-|:---|:---|
-| **Reads five formats** | PDF, PNG and JPEG through OCR, Word, PowerPoint |
-| **Repairs the text first** | Folds ligatures, rejoins words split across a line break, unifies six dash characters, strips page numbers and running headers |
-| **Finds every bibliography** | Not just the last References heading: a file with a list per chapter, separate primary and secondary sources, or a further-reading list after the references yields all of them. An appendix or index between two lists stays in the body |
-| **Reads and writes four styles** | APA, MLA, IEEE and Chicago are recognised on the way in, with a confidence score, and rendered on the way out as a finished reference list |
-| **Validates every field** | A candidate that is really a page range, an author list or a publisher is rejected rather than shown as a title |
-| **Scores what it found** | Every entry reports field coverage; anything below 50% is flagged for review |
-| **Lets you fix it** | Inline editor on every card; the score updates to match what you entered |
-| **Invents nothing** | A document with no bibliography produces no citations, and says so |
-| **Exports six formats** | BibTeX, RIS, CSV, Excel, Word, PDF |
-| **Explains the styles** | Each style's principle, element order and punctuation, with MLA's nine core elements set out in full |
-| **Keeps your place** | Moving between pages never discards your document, your filters or your corrections |
-| **Runs headless** | The same engine works from a terminal with no Streamlit |
+- Every parser proposes candidates in order of reliability and validates each one
+  before accepting it. A rejected candidate leaves the field empty.
+- **No named-entity recognition for authors.** NER reports place names and common
+  nouns as people, and a fabricated author is worse than a missing one.
+- A title that is really a page locator, a DOI, a URL, a publisher or an author
+  list is rejected. A page range that is really two calendar years is rejected. A
+  catalogue imprint — `Washington, D.C. Childrens Books, 1933` — is not a person.
 
 ---
 
 ## Quick start
 
-### Prerequisites
-
-- Python 3.10 or newer
-- Tesseract OCR, only if you want to read scanned images
-
-### Install
+Requires Python 3.10+, and Tesseract only if you want to read scanned images.
 
 ```bash
 git clone https://github.com/Akki-333/PaperMint.git
@@ -83,40 +51,15 @@ python -m venv .venv
 source .venv/bin/activate       # macOS and Linux
 
 pip install -e .
+streamlit run app.py            # opens at http://localhost:8501
 ```
 
-Tesseract, for image OCR:
-
-- **Windows** — [UB-Mannheim build](https://github.com/UB-Mannheim/tesseract/wiki)
-- **macOS** — `brew install tesseract`
-- **Linux** — `sudo apt-get install tesseract-ocr`
-
-Better sentence segmentation in summaries is optional. Without it, a
-deterministic segmenter is used instead:
-
-```bash
-pip install -e ".[nlp]"
-python -m spacy download en_core_web_sm
-```
-
-### Run
-
-```bash
-streamlit run app.py
-```
-
-Opens at `http://localhost:8501`.
-
----
-
-## Command line
-
-The engine imports nothing from Streamlit, so it also runs headless:
+It also runs headless, which is how the layering is proved — the engine imports
+nothing from Streamlit:
 
 ```bash
 papermint paper.pdf                                  # BibTeX to stdout
-papermint *.pdf --format ris --out references.ris    # merged RIS file
-papermint catalogue.pdf --force-parse                # treat it all as a bibliography
+papermint *.pdf --format ris --out references.ris    # merged RIS
 papermint paper.pdf --json                           # full structured result
 ```
 
@@ -124,125 +67,37 @@ Exit codes: `0` clean, `1` at least one file failed, `2` nothing readable.
 
 ---
 
-## Using the app
+## What it does
 
-**Document analyzer.** Upload one file. You get a notice explaining what kind of
-document it is and how the bibliography was found, four headline numbers, and
-three tabs: References, Summary and Source text. Search, sort and filter the
-references, correct any of them inline, then export.
+| | |
+|:---|:---|
+| **Reads five formats** | PDF, PNG and JPEG via OCR, Word, PowerPoint |
+| **Repairs the text first** | Folds ligatures, rejoins words split across line breaks, unifies six dash characters, strips page numbers and running headers. This matters more than any parsing heuristic |
+| **Finds every bibliography** | Not just the last `References` heading. A file with a list per chapter, or separate primary and secondary sources, yields all of them; an appendix or index between two lists stays in the body |
+| **Parses ten fields** | Title, authors, year, journal, volume, issue, pages, DOI, publisher, URL |
+| **Detects and renders four styles** | APA 7, MLA 9, IEEE and Chicago 17 — recognised on the way in, rendered as a finished reference list on the way out |
+| **Reports coverage per entry** | How many fields it could read, and exactly which are missing. Below 50% is flagged for review |
+| **Lets you correct it** | Inline editor on every card; the score updates to match |
+| **Quarantines junk** | A segment carrying no bibliographic evidence is dropped from the list and from exports rather than shown as a citation |
 
-**Batch processing.** Upload many. Each file is processed independently, so a
-corrupt PDF is reported against itself instead of aborting the run. Results
-open as a workbench rather than a stack: a row of pills names every file with
-how many references it gave up, choosing one opens that document full width
-with its own search, sort, paging and export, and the merged bibliography for
-the whole run is a tab away rather than below everything.
-
-**Reference formatter.** Takes the references from the document you analysed,
-from the batch you processed (either as a merged library or narrowed to a
-specific file), or references you paste, and sets them as a publication-ready
-reference list in APA, MLA, IEEE or Chicago, with the same entry shown four ways
-for comparison. Missing elements are left out rather than invented, with an
-optional audit toggle to inspect source omissions without cluttering the
-printed list.
-
-Nothing on any page is discarded when you navigate away. Your document, your
-search, your sort order and your corrections are all still there when you come
-back.
+Four screens: **Document analyzer** (one file), **Batch processing** (many, with a
+merged export), **Reference formatter** (set any reference in all four styles), and
+**About**.
 
 ---
 
 ## How a document is read
 
-`PipelineStage` defines the sequence, and the interface's stepper is driven from
-that same enum, so the displayed steps cannot drift from the executed ones.
-
 ```
-EXTRACT ──▶ CHARACTERIZE ──▶ PARSE ──▶ SUMMARIZE ──▶ result
+EXTRACT ──▶ CHARACTERIZE ──▶ PARSE ──▶ SUMMARIZE
 ```
 
-### 1 — EXTRACT
-
-`resolve_extractor()` picks a decoder by MIME type, falling back to the filename
-extension. The decoder returns text, a real page count and any non-fatal
-warnings. Failures raise `CorruptedDocumentError`, `UnsupportedFileTypeError` or
-`OcrUnavailableError` rather than returning an empty string.
-
-The text is then normalised, and the repairs matter more than any parsing
-heuristic:
-
-| Problem in raw PDF text | Repair |
+| Stage | What happens |
 |:---|:---|
-| Typographic ligatures | Unicode NFKC folding |
-| Soft hyphens, zero-width characters | Removed |
-| Words split across a line break | Rejoined, lowercase to lowercase only |
-| Six different dash characters | Mapped to the ASCII hyphen |
-| Curly quotes | Mapped to straight quotes |
-| Bare page numbers on their own line | Dropped |
-| Repeated running headers and footers | Dropped by repetition frequency |
-
-### 2 — CHARACTERIZE
-
-`characterize_document()` returns a `DetectionOutcome` carrying the bibliography
-block, the remaining body text, the detection method, the document kind, a
-confidence score and human-readable reasoning the interface displays.
-
-Strategies run in descending order of reliability:
-
-1. **Force-parse** from the reader — the whole document is the bibliography.
-2. **The first line declares it** a bibliography.
-3. **References headings** on lines of their own. Every heading opens a candidate
-   block, bounded below by the next heading of any kind, including an appendix,
-   index or glossary heading, and trimmed at any sustained run of narrative
-   prose. The block under the **last** heading is kept on the strength of the
-   heading alone, so a table of contents entry still cannot win; every earlier
-   block must be dense enough to read as references before it joins them.
-4. **A backwards density scan** from the end of the document, tolerating up to
-   four consecutive continuation lines, stopping at the first sustained run of
-   prose. The selected block must itself pass the density check.
-5. **Nothing found** — the document is non-academic, and no citations are
-   produced.
-
-### 3 — PARSE
-
-`split_citations()` tries numbered prefixes, blank lines, hanging indent and
-author boundaries, **validating each candidate split before accepting it** and
-merging continuation fragments. A split that yields mostly non-citation fragments
-is rejected in favour of the next strategy, which is what stops prose being
-shredded into fake entries. Author boundaries recognise surname particles
-(`van der Berg`, `de la Cruz`, `von Neumann`), hyphens, apostrophes and all-caps
-forms.
-
-`detect_style()` scores APA, MLA, IEEE and Chicago signals. `parse_citation()`
-extracts eight fields — title, authors, year, journal, volume, issue, pages, DOI,
-plus publisher and URL — proposing and validating each. Every entry is then
-scored for field coverage.
-
-### 4 — SUMMARIZE
-
-Reference lines are stripped, then sentences are scored by normalised
-content-word frequency with a positional boost for openings and conclusions.
-spaCy is used when present and a deterministic regex segmenter when it is not. A
-document that is itself a reference list gets a factual description rather than
-its own citations read back to it.
-
----
-
-## The eight workflows
-
-Every document takes one of these branches, and the branch taken is always shown
-to the reader with its reasoning.
-
-| # | Document | What happens | Verified by |
-|:--|:---|:---|:---|
-| **1** | **Research paper** — narrative body, then a references section | References heading splits body from bibliography; style detected; eight fields parsed per entry; summary runs on the body only | `test_pipeline_parses_a_research_paper` |
-| **2** | **Annotated bibliography** — each citation followed by commentary | Recognised from the first line or via force-parse; the citation header is isolated from the annotation before any field is extracted; all-caps titles matched while publisher forms are still rejected | `test_pipeline_honours_force_parse` |
-| **3** | **Reference list with no heading** | Density scan walks backwards from the end to the block boundary, so the closing paragraphs of the body are not parsed as citations; method reported as "Detected by citation density" | `tests/test_parsers.py` |
-| **4** | **General document** — no bibliography at all | Detection returns non-academic; the parse stage is skipped; the References tab and export panel are hidden; a notice explains that no references were found and none were invented | `test_pipeline_invents_no_citations_for_prose` |
-| **5** | **Batch processing** | Each file runs the full pipeline; a failure is caught, recorded against that file with its error kind, and the run continues; results cached against a digest of the whole set | `test_batch_isolates_a_failing_file`, `test_batch_reports_progress` |
-| **6** | **Several bibliographies in one file** | Every heading opens a candidate block; the last is kept on the heading alone, earlier ones must be dense enough to read as references, and an appendix or index between them stays in the body | `test_every_reference_block_is_collected_not_only_the_last`, `test_an_appendix_between_two_lists_stays_in_the_body` |
-| **7** | **Formatting for submission** | The analyzer's citations are rendered as a finished list in the chosen style, alphabetised or numbered as that style requires; an element the source never supplied is omitted and named rather than invented | `tests/test_formatters.py` |
-| **8** | **Review and correction** | Entries below 50% are flagged and filterable; every card has an inline editor for all eight fields; on save the citation is rescored by `score_citation()`, marked edited, and written back at its original position so it survives sorting, filtering and pagination; every export reads the corrected list | `test_edited_authors_round_trip_in_either_order`, `test_confidence_can_be_rescored_after_an_edit` |
+| **Extract** | A decoder is resolved by MIME type then extension, and the raw text is repaired — ligatures, soft hyphens, dashes, quotes, page furniture |
+| **Characterize** | Five strategies in descending reliability: a reader override, a first line declaring the document a bibliography, `References`-style headings, a backwards density scan, then nothing found. Returns the block, the document kind, and readable notes on how it decided |
+| **Parse** | The block is split into entries — numbered prefixes, blank lines, hanging indent, author boundaries — and **every candidate split is validated before acceptance**, which is what stops prose being shredded into fake entries. Each entry is then parsed field by field |
+| **Summarize** | Reference lines stripped, sentences scored by content-word frequency with a positional boost. A document that *is* a reference list gets a factual description rather than its own citations read back to it |
 
 ---
 
@@ -251,514 +106,111 @@ to the reader with its reasoning.
 Four layers. The arrows only ever point downward.
 
 ```
-PRESENTATION    papermint/ui/  and  app.py        Streamlit lives ONLY here
+PRESENTATION    src/papermint/ui/  and  app.py     Streamlit lives ONLY here
       │  DocumentInput, PipelineOptions
       ▼
-ORCHESTRATION   papermint/pipeline.py             PipelineService
-      │
+ORCHESTRATION   src/papermint/pipeline.py          PipelineService
       ▼
-DOMAIN          extractors/  parsers/             pure Python, headless
-                formatters/  exporters/
-                enrichment/
-      │
+DOMAIN          extractors/ parsers/ formatters/   pure Python, headless
+                exporters/ enrichment/
       ▼
 DATA MODEL      models.py  errors.py  config.py
 ```
 
-### The rules, and the test that enforces each one
+Four rules, and they are **enforced statically** rather than left to convention —
+`tests/test_architecture.py` parses every module with `ast` and names the file and
+line that breaks one:
 
-`tests/test_architecture.py` parses every module with `ast` and contributes 237
-of the 428 tests. Break a rule and the build names the file and the line.
+1. No Streamlit below the presentation layer.
+2. No presentation imports in the domain layer.
+3. Pages talk to the service, never past it into parsers or extractors.
+4. No `print()`, no bare `except`, no module without `from __future__ import
+   annotations`, no undocumented public definition.
 
-| Rule | Enforced by |
-|:---|:---|
-| No Streamlit import below the presentation layer | `test_the_domain_layer_never_imports_streamlit` |
-| Nothing outside `ui/` imports `papermint.ui.*` | `test_the_domain_layer_never_imports_the_ui` |
-| Pages import `papermint.pipeline` and nothing deeper | `test_pages_do_not_reach_past_the_pipeline_service` |
-| No `print()` anywhere in `papermint/` | `test_no_module_uses_print` |
-| No bare `except`, no silent `pass` | `test_no_module_uses_a_bare_except` |
-| Every module opens with `from __future__ import annotations` | `test_every_module_uses_postponed_annotations` |
-| Every module and public definition is documented with `Args:` / `Returns:` | `test_every_module_and_public_definition_is_documented` |
+`src/papermint/cli.py` is the runtime proof of rule 1: the same `PipelineService`,
+with no Streamlit process anywhere.
 
-When the interface needs a fact from the domain layer, it is re-exported through
-the service facade — which is why `accepted_formats()` and
-`accepted_extensions()` live on `papermint.pipeline`. `papermint/cli.py` is the
-standing proof of the layering: it runs the identical `PipelineService` with no
-Streamlit process anywhere.
-
-### Errors
-
-```
-PaperMintError                  message + optional remedy + stable kind
-├── ExtractionError
-│   ├── UnsupportedFileTypeError
-│   ├── CorruptedDocumentError
-│   ├── EmptyDocumentError
-│   └── OcrUnavailableError
-├── ParsingError
-│   └── StyleDetectionError
-├── SummarizationError
-├── EnrichmentError
-│   ├── CrossRefNetworkError
-│   └── DoiNotFoundError
-└── ExportError
-```
-
-The domain layer converts, never swallows. The presentation layer catches
-`PaperMintError` first, then `Exception` with a logged traceback and a generic
-notice. A broad catch is correct in exactly three places, each with a comment
-saying why: around one citation entry, around one file in a batch, and around a
-progress callback — so a single malformed reference can never discard a whole
-document.
-
----
-
-## Project structure
-
-The package lives under `src/`, which is the layout the Python Packaging
-Authority recommends and the reason `import papermint` can only ever resolve to
-the installed distribution — never to a directory that happens to be sitting in
-the working directory. The repository root therefore holds project files and
-nothing else: what you configure, what you read, and the four directories the
-work lives in.
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 PaperMint/
-├── .github/workflows/ci.yml        # Pytest and ruff gates on every push
-├── .streamlit/config.toml          # Streamlit theme, matching ui/theme.py
-├── assets/                         # Screenshots and sample documents
-├── docs/                           # Architecture and engineering specifications
-├── src/
-│   └── papermint/
-│       ├── config.py               # Constants and thresholds
-│       ├── models.py               # Pydantic models and enums
-│       ├── errors.py               # PaperMintError hierarchy
-│       ├── pipeline.py             # PipelineService, the orchestration layer
-│       ├── cli.py                  # Headless entry point
-│       ├── extractors/
-│       │   ├── base.py             # BaseExtractor, ExtractedDocument
-│       │   ├── registry.py         # MIME and extension resolution
-│       │   └── pdf_ / image_ / docx_ / pptx_extractor.py
-│       ├── parsers/
-│       │   ├── text_normalizer.py  # Ligatures, hyphenation, page furniture
-│       │   ├── bibliography_detector.py
-│       │   ├── citation_splitter.py
-│       │   ├── citation_parser.py
-│       │   ├── style_detector.py
-│       │   └── summarizer.py
-│       ├── formatters/
-│       │   └── reference_formatter.py   # APA, MLA, IEEE, Chicago and their guides
-│       ├── enrichment/crossref.py
-│       ├── exporters/              # bibtex, ris, csv, docx, pdf
-│       └── ui/                     # Streamlit lives only here
-│           ├── theme.py            # Design tokens
-│           ├── icons.py            # Inline SVG set
-│           ├── html.py             # Escaping and safe rendering
-│           ├── styles.py           # Stylesheet built from tokens
-│           ├── navigation.py       # Routes
-│           ├── state.py            # Widget state that survives a page switch
-│           ├── components/         # primitives, citation_card, citation_browser,
-│           │                       #   export_panel, progress, file_uploader
-│           └── pages/              # home, extract, batch, style_studio, about
-├── tests/                          # 475 tests, no network calls
-│   ├── test_architecture.py        # Enforces the layering rules (241)
-│   ├── test_ui.py                  # Components, state and every page (69)
-│   ├── test_normalization.py       # Text repair and parser guards (52)
-│   ├── test_parsers.py             # Detection and multi-block collection (40)
-│   ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
-│   ├── test_formatters.py          # Style rendering and its honesty rules (23)
-│   └── test_models · test_exporters · test_enrichment
-├── app.py                          # Entry point: config, logging, routing
-├── pyproject.toml                  # Packaging, dependencies, ruff and pytest
-├── packages.txt                    # OS packages for deployment (tesseract-ocr)
-├── CHANGELOG.md
-├── LICENSE
-└── README.md
+├── .github/workflows/ci.yml     # pytest and ruff on every push
+├── assets/  docs/
+├── src/papermint/
+│   ├── config.py                # every constant and threshold
+│   ├── models.py                # Pydantic models and enums
+│   ├── errors.py                # typed error hierarchy, each with a remedy
+│   ├── pipeline.py              # PipelineService — the orchestration layer
+│   ├── cli.py                   # headless entry point
+│   ├── extractors/              # pdf, image (OCR), docx, pptx, registry
+│   ├── parsers/                 # normalizer, detector, splitter, parser, style, summarizer
+│   ├── formatters/              # APA / MLA / IEEE / Chicago and their guides
+│   ├── exporters/               # bibtex, ris, csv, xlsx, docx, pdf
+│   └── ui/                      # theme, styles, components, pages
+├── tests/
+├── app.py                       # the path you hand to `streamlit run`
+└── pyproject.toml
 ```
 
-`app.py` stays at the root because it is the path you hand to Streamlit, not a
-module anyone imports. Everything it does is configure the page and call the
-router.
+The package sits under `src/` so `import papermint` can only resolve to the
+installed distribution, never to a directory in the working directory — the suite
+therefore tests what a user would actually install.
 
----
-
-## Data model
-
-`Citation` carries eight core fields plus `raw_text`, `style`, `entry_type`,
-`confidence`, `source_file` and `edited`. Display logic lives in properties:
-`display_title`, `short_author_string`, `author_string`, `venue`, `locator`,
-`doi_url`, `cite_key`, `confidence_band`, `needs_review`, `missing_fields`,
-`is_parsed`. `display_title` never returns "Untitled" — it falls back to the
-entry's own opening text, rendered in italic sans to mark it as unparsed.
-
-Results: `ExtractionResult` for one document, `BatchFileResult` and `BatchResult`
-for a run. `DocumentStats` holds word, character, line, sentence and page counts.
-
-### Thresholds — all in `config.py`, never hard-coded elsewhere
-
-| Constant | Value | Meaning |
-|:---|---:|:---|
-| `CONFIDENCE_HIGH` | 0.60 | Band becomes Complete |
-| `CONFIDENCE_MEDIUM` | 0.30 | Band becomes Partial |
-| `CONFIDENCE_REVIEW` | 0.50 | Below this, flagged for review |
-| `BIBLIOGRAPHY_DENSITY_THRESHOLD` | 0.20 | Density scan trigger |
-| `SPLIT_VALIDATION_RATIO` | 0.40 | Share of segments that must look like citations |
-| `REFERENCE_ONLY_COVERAGE` | 0.80 | Above this, the document is a reference list |
-| `CITATIONS_PER_PAGE` | 25 | Pagination |
-
----
-
-## Design system
-
-Every colour, type step, space step, radius and duration lives in
-`papermint/ui/theme.py` and is emitted as a CSS custom property. A literal hex
-value anywhere else under `ui/` is a defect. `.streamlit/config.toml` carries the
-same surface and text values so Streamlit's own chrome sits on the same palette.
-
-**Palette.** Mint `#34D399` on canvas `#0F172A`, with surfaces `#161F33`,
-`#1D293D` and `#0B1120` layered above it.
-
-**Type.** Inter for interface chrome, Source Serif 4 for bibliographic content,
-JetBrains Mono for identifiers and index numerals. The serif is what makes a
-citation card read as scholarship rather than a form field.
-
-### The citation card
-
-```
-┌─┬──────────────────────────────────────────────────────────────────────┐
-│ │ 01                                   [APA]   [● Complete 100%]        │
-│ │ Machine learning in citation parsing         ← serif, 18px            │
-│ │ Smith, J. A. & Doe, R. B. · 2020             ← 14px, muted            │
-│ │ Journal of Bibliometrics · vol. 15, no. 2, pp. 103-115 · Article     │
-│ │ 10.1016/j.jbi.2020.01.002                    ← mono, link            │
-└─┴──────────────────────────────────────────────────────────────────────┘
-  ▲ 2px rule, coloured by confidence band
-```
-
-Confidence is shown at three levels of detail:
-
-| Level | Where | Shows |
-|:---|:---|:---|
-| Glance | 2px rule on the card's left edge | Band colour |
-| Scan | Badge in the card header | Band label and percentage |
-| Inspect | Line under the metadata | Exactly which fields are missing |
-
-Bands: **Complete** at 60%+, **Partial** from 30%, **Sparse** below. An entry
-under 50% is also flagged for review.
-
-### Deliberately absent
-
-- **No gradient text.** Applying one to every heading flattens hierarchy.
-- **No emoji as icons.** They render differently per platform and cannot inherit
-  text colour. `icons.py` supplies a stroked SVG set on `currentColor`.
-- **No hover lift on static cards.** Motion on a non-interactive element is
-  decoration pretending to be an affordance.
-
-### Rendering rules
-
-- Everything interpolated into markup passes through `esc()`. Titles come from
-  arbitrary uploaded documents.
-- Content markup goes through `render()`, which wraps `st.html()` and bypasses
-  the Markdown parser entirely — the four-space code-block leak is structurally
-  impossible, not merely avoided.
-- Interactive cards are keyed `st.container`s, so real widgets sit inside the
-  card chrome.
-
----
-
-## Engineering standards
-
-- **Python 3.10+.** Modern typing throughout (`Citation | None`, `list[Author]`);
-  `typing.List`, `Optional` and `Union` are rejected by ruff's `UP` rules.
-- **Pydantic v2.** `model_dump()` / `model_dump_json()`, `model_copy(update=...)`
-  for derived instances, constraints declared on the field, computed values as
-  `@property`.
-- **Logging.** Module-level `logger = logging.getLogger(__name__)`, lazy `%s`
-  interpolation never f-strings, `logger.exception()` inside handlers.
-  `basicConfig` is called once in `app.py` and once in `cli.py`, never in a
-  library module.
-- **Optional dependencies.** spaCy is an extra. Downloading a model at request
-  time is forbidden — the previous build called `spacy.cli.download()` inside the
-  request path and stalled a user-facing page for minutes.
-- **Streamlit specifics.** `UploadedFile` bytes are read with `getvalue()`, never
-  `read()`. Expensive work is cached in session state against a content digest.
-  Widgets written in a loop get a stable key, not a positional index.
-
-Run the gates:
-
-```bash
-pytest                 # 428 tests, no network calls
-ruff check .
-ruff format --check .
-```
+</details>
 
 ---
 
 ## Testing
 
-428 tests. None makes a network call. CrossRef is mocked and PDFs are synthesised
-in memory with PyMuPDF.
+**233 tests, expanding to 475 cases.** None makes a network call: CrossRef is
+mocked and PDFs are synthesised in memory with PyMuPDF.
 
 | Suite | Tests | Covers |
 |:---|---:|:---|
-| `test_architecture.py` | 241 | Every layering and coding rule, by parsing each module with `ast` |
-| `test_ui.py` | 69 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
-| `test_normalization.py` | 52 | Text repair, parser guards, surname particles, catalogue imprints |
+| `test_architecture.py` | 9 | The four layering rules, parametrised across every module — 241 cases |
+| `test_ui.py` | 65 | Markup, escaping, components, sticky state, both palettes' contrast, every page via `AppTest` |
+| `test_normalization.py` | 46 | Text repair, parser guards, surname particles, catalogue imprints |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
 | `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
 | `test_formatters.py` | 23 | Style rendering, list ordering, the honesty rules |
-| `test_models.py` | 11 | Schema, properties, cite keys |
-| `test_exporters.py` | 9 | Every format serialises; merged exports name their source file |
-| `test_enrichment.py` | 5 | CrossRef against mocks |
+| `test_models.py` · `test_exporters.py` · `test_enrichment.py` | 25 | Schema and properties, every export format, CrossRef against mocks |
+
+Three gates must pass before any change lands: `pytest`, `ruff check .`,
+`ruff format --check .`.
 
 ---
 
-## Roadmap
+## What it does not do
 
-| Phase | Milestone | Status |
-|:--|:---|:---|
-| 1 | Parser engine hardening — field extraction, validation guards, confidence scoring | **Complete** |
-| 2 | Architecture and service decoupling — `PipelineService`, typed errors, enforced layering | **Complete** |
-| 3 | Interactive review and correction — inline editing, BibTeX copy, search, sort, review filter | **Complete** |
-| 3.5 | Multi-block detection, style rendering, and state that survives a page switch | **Complete** |
-| 4 | Deduplication and provenance — cross-file duplicate merging, source tagging, concurrency | Planned |
-| 5 | Containerisation and deployment | Deferred by request |
+Stated plainly, because a tool that claims to know its own limits should list them.
 
-`Citation.source_file` is already populated by the pipeline and is shown on
-every entry in the batch page's merged library, so both the data and the
-surface for phase 4 are in place. Batch processing is currently sequential.
-
----
-
-## What changed in 2.1.6
-
-The light theme, rebuilt around measured contrast.
-
-**Fixed** - most of the sidebar was never bound to the design tokens, so it
-kept Streamlit's own dark-theme colours and simply disappeared on a light
-ground: the navigation, the section labels, the captions and the Settings
-panel. Every one is now coloured from a token.
-
-**Changed** - the light palette has three genuinely distinct surfaces, borders
-that are visible against the canvas, and a deeper accent, because mint cannot
-carry text on white. Every text pair now clears WCAG AA and body text clears
-AAA, and a test computes the ratios so a palette edit cannot quietly undo it.
-
-**Known** - the dark palette has two pairs below AA. They are unchanged and
-pinned by name in the suite, so a third cannot appear unnoticed.
-
----
-
-## What changed in 2.1.5
-
-A fabricated author that survived its own fix, and a light theme.
-
-**Fixed** - `Washington, D.C.` was still being read as an author. The previous
-guard covered only the colon form of a catalogue imprint; the same place with a
-full stop or a comma went on inventing a person. The guard now also declines a
-candidate whose given part is a state or province abbreviation, in the tight
-form only, so `Smith, D. C.` stays a person while `Washington, D.C.` does not.
-A parametrised test covers every punctuation an imprint uses.
-
-**Added** - a Settings gear at the foot of the sidebar with a Dark/Light
-switch. Every rule in the stylesheet is written against a design token, so one
-swapped `:root` block repaints the whole interface - no JavaScript and no
-reload - and a motion token eases the change rather than flashing it. Card
-bands and notice tones now carry CSS variable references instead of literals,
-which is what lets a palette swap reach markup built at render time.
-
-**Fixed** - `build_navigation(only=...)` handed a cached page object to a
-single-page navigation, and Streamlit set its default flag in place, so a later
-full navigation saw two defaults and raised. It never bit the app, which only
-ever builds the full navigation, but it made the test suite order-dependent.
-
-**Known limitation** - `.streamlit/config.toml` declares the dark palette to
-Streamlit itself and cannot change at runtime, so chrome Streamlit renders into
-its own portals stays dark in light mode.
-
----
-
-## What changed in 2.1.4
-
-The repository moved to the src layout.
-
-**Changed** - `papermint/` is now `src/papermint/`. The root no longer carries a
-directory sharing the project's own name, and holds only project files: what you
-configure, what you read, and the four directories the work lives in. The layout
-is the one the Python Packaging Authority recommends, and it means `import
-papermint` can only ever resolve to the installed distribution, never to a
-directory that happens to be in the working directory - so the suite tests what
-a user would actually install.
-
-`app.py` stays at the root, because it is the path handed to `streamlit run`
-rather than a module anyone imports.
-
-Everything that computed a path was moved with it: hatchling's wheel target,
-pytest's `pythonpath`, ruff's per-file ignores, `config.PROJECT_ROOT`, and the
-architecture gate's `PACKAGE_ROOT`. Every file moved with `git mv`, so history
-follows the code.
-
----
-
-## What changed in 2.1.3
-
-A fabricated author, and the route that was missing beside it.
-
-**Fixed** - `Washington, D.C.` was being reported as an author. A catalogue
-imprint opens `Washington, D.C.: Childrens Books, 1933`, and the place matches
-the inverted-name form exactly: a capitalised surname, a comma, a run of
-initials. Because the invented author filled the field confidence weighs most
-heavily, the worst-parsed entry on the page carried the highest badge. The
-guard is structural - no citation style puts a colon after an author, every
-imprint puts one after its place - so there is no list of place names to keep.
-
-**Changed** - the reference formatter can now take its references from a batch,
-not only from the analyzer. A reader who had run a batch was previously offered
-nothing but the paste box. It also gained a narrowing box, so one reference can
-be found in a three-hundred-entry run, and the downloads contain exactly what
-the box leaves on screen.
-
-**Fixed** - counts now agree with their nouns: "1 entry", not "1 entries", in
-the notices and in the Word document's subtitle; and "This entry is missing an
-element" rather than "1 of 1 entries are missing an element".
-
-**Added** - a `Source file` column on merged CSV and Excel exports, present
-only when there is provenance to report, so a single document's export keeps
-the columns it always had.
-
----
-
-## What changed in 2.1.2
-
-The batch page's document switcher.
-
-**Changed** - the switcher was a rail of per-file containers beside a
-two-thirds pane. Its entries overlapped one another, its labels would not
-align, and academic filenames did not fit the width it had. It is now a single
-row of pills above a full-width pane: one widget that owns its own selection,
-cannot overlap itself, keeps the choice across a page switch, and gives the
-citation cards the whole page. Each pill names its file and how many
-references came out of it.
-
-**Removed** - `micro_note()`, whose only caller was the rail, and every
-stylesheet rule that had accumulated trying to make the rail behave.
-
-**Fixed** - a clipped filename no longer reads `report_2019.` before its
-ellipsis.
-
----
-
-## What changed in 2.1.1
-
-The batch page became a workbench.
-
-**Added** - `ui/components/citation_browser.py`: search, ordering, a
-needs-review filter and paging over any citation list, namespaced by a key
-prefix so several can coexist on one screen. The analyzer and both of the
-batch page's lists now share it, so a long reference list behaves the same
-wherever it appears. `render_compact_export()` gives a document its own export
-in a popover; `document_header()` and `micro_note()` are the two primitives the
-new layout needed.
-
-**Changed** - batch results are a rail and a pane instead of a stack of
-expanders. The rail names every file with how it turned out; selecting one puts
-that document in the pane with its own controls and its own export. The merged
-export moved into a tab of its own, so it is one click from the top of the
-results rather than below every file. Every entry in the merged library names
-the file it came from.
-
-**Fixed** - opening a 163-entry file no longer renders 163 cards at once, and
-reaching the export no longer means scrolling past every document in the run.
-
----
-
-## What changed in 2.1.0
-
-Interface and coverage work, driven by using 2.0.0 on a real education
-catalogue.
-
-**Added** - `formatters/reference_formatter.py` and the **Reference formatter** page:
-a `Citation` rendered as APA 7, MLA 9, IEEE or Chicago 17, with an account of
-what each style is for, its ordered elements and the punctuation that closes
-each, and the same entry shown four ways. `PipelineService.parse_reference()`
-parses one pasted reference. `ui/state.py` keeps widget values across a page
-switch. About gained a full "Citation styles, explained" section.
-
-**Changed** - the citation card is now an aligned label-and-value grid with a
-coverage meter, so every field says what it is. The processing indicator is an
-animated flow that names what each stage is doing. Bibliography detection
-collects *every* qualifying reference block rather than the text after the last
-heading, bounded by appendix, index and glossary headings. Both workspace pages
-show their cached result when the upload control comes back empty after a page
-switch.
-
-**Removed** - the DOI lookup page, replaced by the reference formatter; the "Segments
-set aside" panel, though the quarantine behind it still runs and still keeps
-non-bibliographic segments out of every export; `_has_bibliographic_density()`,
-dead since 2.0.0.
-
-**Unchanged, and deliberately so** - nothing is invented. The new formatter
-omits any element the source did not supply and names it, and it never recases
-a title, because deciding which words are proper nouns is exactly the judgement
-a machine gets wrong.
-
----
-
-## What changed in 2.0.0
-
-A rebuild of the architecture, the parsing engine and the interface. The public
-signatures of `detect_bibliography_section`, `split_citations`, `parse_citation`,
-`detect_style`, `summarize` and every exporter were kept, so the original 48
-tests still pass untouched. The suite grew from 48 to 345.
-
-**Added** — `pipeline.py` (`PipelineService`, `PipelineStage`, `process_batch()`
-with per-file isolation), `errors.py` (the full typed hierarchy), the extractor
-registry, `cli.py`, `text_normalizer.py`, the `theme.py` / `icons.py` /
-`html.py` design layer, the inline citation editor with rescoring, per-card
-BibTeX view, five-field search, six sort orders and a review filter.
-
-**Changed** — both Streamlit pages now call the service instead of sequencing
-domain engines themselves; results cache against a content digest; the density
-scan walks back to a block boundary; the references heading match takes the last
-occurrence; every split is validated before acceptance; spaCy became optional.
-
-**Fixed** — uploads returning zero bytes on every rerun; the stepper stacking
-four progress bars; three-or-more-author APA citations losing their authors; a
-date span in a title becoming a page range; unescaped document text corrupting
-cards; inflated sentence counts; page counts always zero; domain logging going
-nowhere; the About page rendering its diagram as a code block; CrossRef network
-failure being indistinguishable from a missing DOI.
-
-**Removed** — `pytextrank`, `bibtexparser` and `httpx` (none were imported);
-`spacy.cli.download()` from the request path; named entity recognition from
-author extraction; gradient text, emoji icons and hover-lift animation.
+- **Field coverage is not accuracy.** The percentage on each card counts how many
+  fields were populated, not whether they are correct — an entry parsed wrongly
+  can still score highly. It is a completeness signal, and the interface says so:
+  the badge reads *Complete* / *Partial* / *Sparse*, the tiles read *field
+  coverage*.
+- **No published precision or recall.** There is no labelled corpus yet, so
+  accuracy is demonstrated by regression tests over real failure cases rather than
+  by a headline number. Building that corpus is the next substantial piece of work.
+- **No cross-file deduplication.** A batch collects every citation without merging
+  duplicates. Provenance is carried on every entry, so the data for it exists.
+- **Batch processing is sequential.** Concurrency across files is the obvious next
+  performance win.
+- **OCR quality bounds everything.** A scanned page Tesseract reads poorly produces
+  poor citations; the pipeline repairs text, it cannot recover it.
+- **Single user, no persistence.** Results live in Streamlit session state for the
+  life of the session. There is no database and no accounts.
 
 ---
 
 ## Built with
 
-[Streamlit](https://streamlit.io) ·
-[Pydantic](https://docs.pydantic.dev) ·
-[PyMuPDF](https://pymupdf.readthedocs.io) ·
-[python-docx](https://python-docx.readthedocs.io) ·
-[python-pptx](https://python-pptx.readthedocs.io) ·
-[Tesseract](https://github.com/tesseract-ocr/tesseract) ·
-[ReportLab](https://www.reportlab.com) ·
-[spaCy](https://spacy.io) (optional)
+Streamlit · PyMuPDF · Tesseract · python-docx · python-pptx · pandas · openpyxl ·
+ReportLab · Pydantic · pytest · Ruff
 
----
-
-## Contributing
-
-1. Fork and branch: `git checkout -b feature/your-feature`
-2. Make the change, and add the test that would have caught its absence
-3. `pytest && ruff check . && ruff format --check .`
-4. Open a pull request
-
----
+Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-Made by [Akki](https://github.com/Akki-333)
+MIT — see [LICENSE](LICENSE).

@@ -5,6 +5,182 @@ All notable changes to PaperMint are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.6] - 2026-09-06
+
+The light theme, rebuilt around measured contrast.
+
+**Fixed** - most of the sidebar was never bound to the design tokens, so it
+kept Streamlit's own dark-theme colours and simply disappeared on a light
+ground: the navigation, the section labels, the captions and the Settings
+panel. Every one is now coloured from a token.
+
+**Changed** - the light palette has three genuinely distinct surfaces, borders
+that are visible against the canvas, and a deeper accent, because mint cannot
+carry text on white. Every text pair now clears WCAG AA and body text clears
+AAA, and a test computes the ratios so a palette edit cannot quietly undo it.
+
+**Known** - the dark palette has two pairs below AA. They are unchanged and
+pinned by name in the suite, so a third cannot appear unnoticed.
+
+---
+
+## [2.1.5] - 2026-09-06
+
+A fabricated author that survived its own fix, and a light theme.
+
+**Fixed** - `Washington, D.C.` was still being read as an author. The previous
+guard covered only the colon form of a catalogue imprint; the same place with a
+full stop or a comma went on inventing a person. The guard now also declines a
+candidate whose given part is a state or province abbreviation, in the tight
+form only, so `Smith, D. C.` stays a person while `Washington, D.C.` does not.
+A parametrised test covers every punctuation an imprint uses.
+
+**Added** - a Settings gear at the foot of the sidebar with a Dark/Light
+switch. Every rule in the stylesheet is written against a design token, so one
+swapped `:root` block repaints the whole interface - no JavaScript and no
+reload - and a motion token eases the change rather than flashing it. Card
+bands and notice tones now carry CSS variable references instead of literals,
+which is what lets a palette swap reach markup built at render time.
+
+**Fixed** - `build_navigation(only=...)` handed a cached page object to a
+single-page navigation, and Streamlit set its default flag in place, so a later
+full navigation saw two defaults and raised. It never bit the app, which only
+ever builds the full navigation, but it made the test suite order-dependent.
+
+**Known limitation** - `.streamlit/config.toml` declares the dark palette to
+Streamlit itself and cannot change at runtime, so chrome Streamlit renders into
+its own portals stays dark in light mode.
+
+---
+
+## [2.1.4] - 2026-09-06
+
+The repository moved to the src layout.
+
+**Changed** - `papermint/` is now `src/papermint/`. The root no longer carries a
+directory sharing the project's own name, and holds only project files: what you
+configure, what you read, and the four directories the work lives in. The layout
+is the one the Python Packaging Authority recommends, and it means `import
+papermint` can only ever resolve to the installed distribution, never to a
+directory that happens to be in the working directory - so the suite tests what
+a user would actually install.
+
+`app.py` stays at the root, because it is the path handed to `streamlit run`
+rather than a module anyone imports.
+
+Everything that computed a path was moved with it: hatchling's wheel target,
+pytest's `pythonpath`, ruff's per-file ignores, `config.PROJECT_ROOT`, and the
+architecture gate's `PACKAGE_ROOT`. Every file moved with `git mv`, so history
+follows the code.
+
+---
+
+## [2.1.3] - 2026-09-06
+
+A fabricated author, and the route that was missing beside it.
+
+**Fixed** - `Washington, D.C.` was being reported as an author. A catalogue
+imprint opens `Washington, D.C.: Childrens Books, 1933`, and the place matches
+the inverted-name form exactly: a capitalised surname, a comma, a run of
+initials. Because the invented author filled the field confidence weighs most
+heavily, the worst-parsed entry on the page carried the highest badge. The
+guard is structural - no citation style puts a colon after an author, every
+imprint puts one after its place - so there is no list of place names to keep.
+
+**Changed** - the reference formatter can now take its references from a batch,
+not only from the analyzer. A reader who had run a batch was previously offered
+nothing but the paste box. It also gained a narrowing box, so one reference can
+be found in a three-hundred-entry run, and the downloads contain exactly what
+the box leaves on screen.
+
+**Fixed** - counts now agree with their nouns: "1 entry", not "1 entries", in
+the notices and in the Word document's subtitle; and "This entry is missing an
+element" rather than "1 of 1 entries are missing an element".
+
+**Added** - a `Source file` column on merged CSV and Excel exports, present
+only when there is provenance to report, so a single document's export keeps
+the columns it always had.
+
+---
+
+## [2.1.2] - 2026-09-06
+
+The batch page's document switcher.
+
+**Changed** - the switcher was a rail of per-file containers beside a
+two-thirds pane. Its entries overlapped one another, its labels would not
+align, and academic filenames did not fit the width it had. It is now a single
+row of pills above a full-width pane: one widget that owns its own selection,
+cannot overlap itself, keeps the choice across a page switch, and gives the
+citation cards the whole page. Each pill names its file and how many
+references came out of it.
+
+**Removed** - `micro_note()`, whose only caller was the rail, and every
+stylesheet rule that had accumulated trying to make the rail behave.
+
+**Fixed** - a clipped filename no longer reads `report_2019.` before its
+ellipsis.
+
+---
+
+## [2.1.1] - 2026-09-06
+
+The batch page became a workbench.
+
+**Added** - `ui/components/citation_browser.py`: search, ordering, a
+needs-review filter and paging over any citation list, namespaced by a key
+prefix so several can coexist on one screen. The analyzer and both of the
+batch page's lists now share it, so a long reference list behaves the same
+wherever it appears. `render_compact_export()` gives a document its own export
+in a popover; `document_header()` and `micro_note()` are the two primitives the
+new layout needed.
+
+**Changed** - batch results are a rail and a pane instead of a stack of
+expanders. The rail names every file with how it turned out; selecting one puts
+that document in the pane with its own controls and its own export. The merged
+export moved into a tab of its own, so it is one click from the top of the
+results rather than below every file. Every entry in the merged library names
+the file it came from.
+
+**Fixed** - opening a 163-entry file no longer renders 163 cards at once, and
+reaching the export no longer means scrolling past every document in the run.
+
+---
+
+## [2.1.0] - 2026-09-06
+
+Interface and coverage work, driven by using 2.0.0 on a real education
+catalogue.
+
+**Added** - `formatters/reference_formatter.py` and the **Reference formatter** page:
+a `Citation` rendered as APA 7, MLA 9, IEEE or Chicago 17, with an account of
+what each style is for, its ordered elements and the punctuation that closes
+each, and the same entry shown four ways. `PipelineService.parse_reference()`
+parses one pasted reference. `ui/state.py` keeps widget values across a page
+switch. About gained a full "Citation styles, explained" section.
+
+**Changed** - the citation card is now an aligned label-and-value grid with a
+coverage meter, so every field says what it is. The processing indicator is an
+animated flow that names what each stage is doing. Bibliography detection
+collects *every* qualifying reference block rather than the text after the last
+heading, bounded by appendix, index and glossary headings. Both workspace pages
+show their cached result when the upload control comes back empty after a page
+switch.
+
+**Removed** - the DOI lookup page, replaced by the reference formatter; the "Segments
+set aside" panel, though the quarantine behind it still runs and still keeps
+non-bibliographic segments out of every export; `_has_bibliographic_density()`,
+dead since 2.0.0.
+
+**Unchanged, and deliberately so** - nothing is invented. The new formatter
+omits any element the source did not supply and names it, and it never recases
+a title, because deciding which words are proper nouns is exactly the judgement
+a machine gets wrong.
+
+---
+
+---
+
 ## [2.0.0] - 2026-09-03
 
 A rebuild of the architecture, the parsing engine and the interface. The public
