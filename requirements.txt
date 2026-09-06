@@ -1,0 +1,6 @@
+# Streamlit Community Cloud installs from this file. It installs the project
+# itself, not only its dependencies, which a src layout requires: the package
+# lives at src/papermint and is unreachable from a bare checkout otherwise.
+#
+# pyproject.toml remains the single source of truth for the dependency list.
+.

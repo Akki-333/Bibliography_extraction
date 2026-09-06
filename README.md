@@ -7,7 +7,7 @@ out, with a document summary and a finished reference list set in APA, MLA, IEEE
 or Chicago.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-34D399.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-233%20passing-34D399.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-251%20passing-34D399.svg)](tests/)
 [![Ruff](https://img.shields.io/badge/lint-ruff-34D399.svg)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-34D399.svg)](LICENSE)
 
@@ -35,6 +35,38 @@ That rule is enforced, not aspired to:
 - A title that is really a page locator, a DOI, a URL, a publisher or an author
   list is rejected. A page range that is really two calendar years is rejected. A
   catalogue imprint — `Washington, D.C. Childrens Books, 1933` — is not a person.
+
+---
+
+## Measured accuracy
+
+Precision and recall against a labelled corpus of 27 references spanning APA,
+MLA, IEEE, physics venue-tail, arXiv, catalogue imprints and awkward name
+forms. Every field is labelled, **including the ones that should come back
+empty**, so inventing a value is scored as a false positive rather than passing
+unnoticed.
+
+| Field | Precision | Recall |
+|:---|---:|---:|
+| Title | 92.6% | 100% |
+| Authors | 100% | 100% |
+| Year | 100% | 100% |
+| Journal | 95.0% | 95.0% |
+| Volume | 100% | 100% |
+| Issue | 100% | 100% |
+| Pages | 100% | 90.0% |
+| DOI | 100% | 100% |
+| Publisher | 100% | 50.0% |
+| **Overall** | **98.0%** | **96.7%** |
+
+Precision above recall is the design working: the parser misses a field rather
+than inventing one. Publisher recall is the clearest example — it declines any
+trailing phrase it cannot confirm is a publisher, so it finds half of them and
+fabricates none.
+
+Reproduce it with `pytest -s -k accuracy_report`. The suite fails if overall
+precision drops below 90% or recall below 80%, so the numbers above cannot
+quietly rot.
 
 ---
 
@@ -78,6 +110,7 @@ Exit codes: `0` clean, `1` at least one file failed, `2` nothing readable.
 | **Detects and renders four styles** | APA 7, MLA 9, IEEE and Chicago 17 — recognised on the way in, rendered as a finished reference list on the way out |
 | **Reports coverage per entry** | How many fields it could read, and exactly which are missing. Below 50% is flagged for review |
 | **Lets you correct it** | Inline editor on every card; the score updates to match |
+| **Merges duplicates across files** | A batch cites the same work from several documents; entries sharing a DOI, or a title and year, are merged into the fullest record with every source file named on it. Anything with weaker identity is left alone |
 | **Quarantines junk** | A segment carrying no bibliographic evidence is dropped from the list and from exports rather than shown as a citation |
 
 Four screens: **Document analyzer** (one file), **Batch processing** (many, with a
@@ -163,18 +196,19 @@ therefore tests what a user would actually install.
 
 ## Testing
 
-**233 tests, expanding to 475 cases.** None makes a network call: CrossRef is
-mocked and PDFs are synthesised in memory with PyMuPDF.
+**251 tests, expanding to 492 cases.** None makes a network call, and PDFs are
+synthesised in memory with PyMuPDF.
 
 | Suite | Tests | Covers |
 |:---|---:|:---|
-| `test_architecture.py` | 9 | The four layering rules, parametrised across every module — 241 cases |
+| `test_architecture.py` | 9 | The four layering rules, parametrised across every module — 237 cases |
 | `test_ui.py` | 65 | Markup, escaping, components, sticky state, both palettes' contrast, every page via `AppTest` |
 | `test_normalization.py` | 46 | Text repair, parser guards, surname particles, catalogue imprints |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
-| `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
+| `test_pipeline.py` | 28 | Orchestration, concurrent batch isolation and ordering, registry, CLI |
 | `test_formatters.py` | 23 | Style rendering, list ordering, the honesty rules |
-| `test_models.py` · `test_exporters.py` · `test_enrichment.py` | 25 | Schema and properties, every export format, CrossRef against mocks |
+| `test_dedupe.py` | 13 | What must and must not be merged across files |
+| `test_models.py` · `test_exporters.py` · `test_accuracy.py` | 27 | Schema, every export format, and the accuracy floors above |
 
 Three gates must pass before any change lands: `pytest`, `ruff check .`,
 `ruff format --check .`.
@@ -190,13 +224,13 @@ Stated plainly, because a tool that claims to know its own limits should list th
   can still score highly. It is a completeness signal, and the interface says so:
   the badge reads *Complete* / *Partial* / *Sparse*, the tiles read *field
   coverage*.
-- **No published precision or recall.** There is no labelled corpus yet, so
-  accuracy is demonstrated by regression tests over real failure cases rather than
-  by a headline number. Building that corpus is the next substantial piece of work.
-- **No cross-file deduplication.** A batch collects every citation without merging
-  duplicates. Provenance is carried on every entry, so the data for it exists.
-- **Batch processing is sequential.** Concurrency across files is the obvious next
-  performance win.
+- **The corpus is small.** 27 labelled references is enough to catch a
+  regression and to state a number honestly; it is not enough to claim the
+  figures generalise to every document in the wild. Growing it is the next
+  piece of work.
+- **Publisher recall is 50%.** The parser only names a publisher it can
+  confirm, so it misses half of them rather than guessing. That is the intended
+  trade, not an oversight.
 - **OCR quality bounds everything.** A scanned page Tesseract reads poorly produces
   poor citations; the pipeline repairs text, it cannot recover it.
 - **Single user, no persistence.** Results live in Streamlit session state for the

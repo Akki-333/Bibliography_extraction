@@ -103,3 +103,6 @@ dmypy.json
 
 # Local working references — not part of the published repository
 CLAUDE.md
+
+# Crash dumps from Git Bash on Windows.
+bash.exe.stackdump
