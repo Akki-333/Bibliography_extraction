@@ -1,0 +1,434 @@
+[
+  {
+    "id": "apa-journal-01",
+    "class": "APA journal",
+    "raw": "Smith, J. A. (2020). Machine learning in citation parsing. Journal of Bibliometrics, 15(2), 103-115. https://doi.org/10.1016/j.jbi.2020.01.002",
+    "expected": {
+      "title": "Machine learning in citation parsing",
+      "authors": ["Smith, J. A."],
+      "year": "2020",
+      "journal": "Journal of Bibliometrics",
+      "volume": "15",
+      "issue": "2",
+      "pages": "103-115",
+      "doi": "10.1016/j.jbi.2020.01.002",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "apa-journal-02",
+    "class": "APA journal",
+    "raw": "Chen, L., & Osei, K. B. (2018). Retrieval practice in undergraduate physics. Studies in Higher Education, 43(7), 1180-1195.",
+    "expected": {
+      "title": "Retrieval practice in undergraduate physics",
+      "authors": ["Chen, L.", "Osei, K. B."],
+      "year": "2018",
+      "journal": "Studies in Higher Education",
+      "volume": "43",
+      "issue": "7",
+      "pages": "1180-1195",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "apa-journal-03",
+    "class": "APA journal",
+    "raw": "Okonkwo, A. N., Ferreira, M., & Lindqvist, S. (2021). Sensor drift in low-cost air quality monitors. Environmental Research Letters, 16(4), 044021.",
+    "expected": {
+      "title": "Sensor drift in low-cost air quality monitors",
+      "authors": ["Okonkwo, A. N.", "Ferreira, M.", "Lindqvist, S."],
+      "year": "2021",
+      "journal": "Environmental Research Letters",
+      "volume": "16",
+      "issue": "4",
+      "pages": "044021",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "apa-journal-04",
+    "class": "APA journal",
+    "raw": "van der Berg, A., & de la Cruz, M. (2019). Coastal sediment transport under storm surge. Nature Geoscience, 12, 455-462.",
+    "expected": {
+      "title": "Coastal sediment transport under storm surge",
+      "authors": ["van der Berg, A.", "de la Cruz, M."],
+      "year": "2019",
+      "journal": "Nature Geoscience",
+      "volume": "12",
+      "issue": "",
+      "pages": "455-462",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "apa-journal-05",
+    "class": "APA journal",
+    "raw": "Nakamura, H. (2015). A longitudinal study of bilingual working memory. Cognition, 141, 62-75. https://doi.org/10.1016/j.cognition.2015.04.011",
+    "expected": {
+      "title": "A longitudinal study of bilingual working memory",
+      "authors": ["Nakamura, H."],
+      "year": "2015",
+      "journal": "Cognition",
+      "volume": "141",
+      "issue": "",
+      "pages": "62-75",
+      "doi": "10.1016/j.cognition.2015.04.011",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "apa-book-01",
+    "class": "APA book",
+    "raw": "Bourdieu, P. (1984). Distinction: A social critique of the judgement of taste. Harvard University Press.",
+    "expected": {
+      "title": "Distinction: A social critique of the judgement of taste",
+      "authors": ["Bourdieu, P."],
+      "year": "1984",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": "Harvard University Press"
+    }
+  },
+  {
+    "id": "apa-book-02",
+    "class": "APA book",
+    "raw": "Sen, A. (1999). Development as freedom. Oxford University Press.",
+    "expected": {
+      "title": "Development as freedom",
+      "authors": ["Sen, A."],
+      "year": "1999",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": "Oxford University Press"
+    }
+  },
+  {
+    "id": "mla-journal-01",
+    "class": "MLA journal",
+    "raw": "Ambler, Marjane. \"Women Leaders in Indian Education.\" Tribal College, vol. 3, no. 4, 1992, pp. 10-15.",
+    "expected": {
+      "title": "Women Leaders in Indian Education",
+      "authors": ["Ambler, Marjane"],
+      "year": "1992",
+      "journal": "Tribal College",
+      "volume": "3",
+      "issue": "4",
+      "pages": "10-15",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "mla-journal-02",
+    "class": "MLA journal",
+    "raw": "Ngugi, Wanjiku. \"Orality and the Postcolonial Novel.\" Research in African Literatures, vol. 48, no. 2, 2017, pp. 88-104.",
+    "expected": {
+      "title": "Orality and the Postcolonial Novel",
+      "authors": ["Ngugi, Wanjiku"],
+      "year": "2017",
+      "journal": "Research in African Literatures",
+      "volume": "48",
+      "issue": "2",
+      "pages": "88-104",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "mla-journal-03",
+    "class": "MLA journal",
+    "raw": "Halberstam, Jack. \"Queer Temporality and Subcultural Lives.\" Social Text, vol. 23, no. 3, 2005, pp. 1-19.",
+    "expected": {
+      "title": "Queer Temporality and Subcultural Lives",
+      "authors": ["Halberstam, Jack"],
+      "year": "2005",
+      "journal": "Social Text",
+      "volume": "23",
+      "issue": "3",
+      "pages": "1-19",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "ieee-01",
+    "class": "IEEE numbered",
+    "raw": "[1] J. A. Smith and R. B. Doe, \"Machine learning in citation parsing,\" Journal of Bibliometrics, vol. 15, no. 2, pp. 103-115, 2020.",
+    "expected": {
+      "title": "Machine learning in citation parsing",
+      "authors": ["Smith, J. A.", "Doe, R. B."],
+      "year": "2020",
+      "journal": "Journal of Bibliometrics",
+      "volume": "15",
+      "issue": "2",
+      "pages": "103-115",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "ieee-02",
+    "class": "IEEE numbered",
+    "raw": "[12] K. Yamamoto, \"Fault tolerance in distributed ledgers,\" IEEE Transactions on Computers, vol. 68, no. 9, pp. 1301-1314, 2019.",
+    "expected": {
+      "title": "Fault tolerance in distributed ledgers",
+      "authors": ["Yamamoto, K."],
+      "year": "2019",
+      "journal": "IEEE Transactions on Computers",
+      "volume": "68",
+      "issue": "9",
+      "pages": "1301-1314",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "physics-tail-01",
+    "class": "Physics venue tail",
+    "raw": "[24] V. M. Bastidas, C. Emary, B. Regler, and T. Brandes, Nonequilibrium quantum phase transitions in the Dicke model, Phys. Rev. E 87, 052110 (2012).",
+    "expected": {
+      "title": "Nonequilibrium quantum phase transitions in the Dicke model",
+      "authors": ["Bastidas, V. M.", "Emary, C.", "Regler, B.", "Brandes, T."],
+      "year": "2012",
+      "journal": "Phys. Rev. E",
+      "volume": "87",
+      "issue": "",
+      "pages": "052110",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "physics-tail-02",
+    "class": "Physics venue tail",
+    "raw": "[7] A. Eckardt, C. Weiss, and M. Holthaus, Superfluid-insulator transition in a periodically driven optical lattice, Phys. Rev. Lett. 95, 260404 (2005).",
+    "expected": {
+      "title": "Superfluid-insulator transition in a periodically driven optical lattice",
+      "authors": ["Eckardt, A.", "Weiss, C.", "Holthaus, M."],
+      "year": "2005",
+      "journal": "Phys. Rev. Lett.",
+      "volume": "95",
+      "issue": "",
+      "pages": "260404",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "physics-tail-03",
+    "class": "Physics venue tail",
+    "raw": "[31] S. Diehl, A. Micheli, and P. Zoller, Quantum states and phases in driven open systems, Nat. Phys. 4, 878 (2008).",
+    "expected": {
+      "title": "Quantum states and phases in driven open systems",
+      "authors": ["Diehl, S.", "Micheli, A.", "Zoller, P."],
+      "year": "2008",
+      "journal": "Nat. Phys.",
+      "volume": "4",
+      "issue": "",
+      "pages": "878",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "arxiv-01",
+    "class": "arXiv preprint",
+    "raw": "M. Rahman and T. Alvarez, Scaling laws for sparse attention, arXiv:2506.01234.",
+    "expected": {
+      "title": "Scaling laws for sparse attention",
+      "authors": ["Rahman, M.", "Alvarez, T."],
+      "year": "2025",
+      "journal": "arXiv preprint",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "arxiv-02",
+    "class": "arXiv preprint",
+    "raw": "L. Petrova, Topological invariants of driven lattices, arXiv:2401.09876.",
+    "expected": {
+      "title": "Topological invariants of driven lattices",
+      "authors": ["Petrova, L."],
+      "year": "2024",
+      "journal": "arXiv preprint",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "catalogue-01",
+    "class": "Catalogue imprint",
+    "raw": "Washington, D.C. Childrens Books, 1933. Curriculum-Bull-11 61p.",
+    "expected": {
+      "title": "",
+      "authors": [],
+      "year": "1933",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "61",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "catalogue-02",
+    "class": "Catalogue imprint",
+    "raw": "Boston, Mass. Beacon Press, 1961. A Study of Reading Habits 44p.",
+    "expected": {
+      "title": "",
+      "authors": [],
+      "year": "1961",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "44",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "edge-no-year-01",
+    "class": "Missing element",
+    "raw": "Fairclough, Norman. \"Critical Discourse Analysis.\" Discourse and Society, vol. 4, no. 2, pp. 133-168.",
+    "expected": {
+      "title": "Critical Discourse Analysis",
+      "authors": ["Fairclough, Norman"],
+      "year": "",
+      "journal": "Discourse and Society",
+      "volume": "4",
+      "issue": "2",
+      "pages": "133-168",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "edge-date-span-01",
+    "class": "Missing element",
+    "raw": "Hobsbawm, E. (1994). The age of extremes: The short twentieth century 1914-1991. Michael Joseph.",
+    "expected": {
+      "title": "The age of extremes: The short twentieth century 1914-1991",
+      "authors": ["Hobsbawm, E."],
+      "year": "1994",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": "Michael Joseph"
+    }
+  },
+  {
+    "id": "edge-hyphenated-01",
+    "class": "Name forms",
+    "raw": "Smith-Jones, K. L. (2016). Adaptive mesh refinement for tidal models. Ocean Modelling, 102, 15-29.",
+    "expected": {
+      "title": "Adaptive mesh refinement for tidal models",
+      "authors": ["Smith-Jones, K. L."],
+      "year": "2016",
+      "journal": "Ocean Modelling",
+      "volume": "102",
+      "issue": "",
+      "pages": "15-29",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "edge-particle-01",
+    "class": "Name forms",
+    "raw": "von Neumann, J. (1945). First draft of a report on the EDVAC. Moore School of Electrical Engineering.",
+    "expected": {
+      "title": "First draft of a report on the EDVAC",
+      "authors": ["von Neumann, J."],
+      "year": "1945",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": "Moore School of Electrical Engineering"
+    }
+  },
+  {
+    "id": "edge-initials-collision-01",
+    "class": "Name forms",
+    "raw": "Smith, D. C. (2011). Spaced initials are a person, not a district. Nature, 3, 1-4.",
+    "expected": {
+      "title": "Spaced initials are a person, not a district",
+      "authors": ["Smith, D. C."],
+      "year": "2011",
+      "journal": "Nature",
+      "volume": "3",
+      "issue": "",
+      "pages": "1-4",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "edge-subtitle-colon-01",
+    "class": "Name forms",
+    "raw": "Doe, Jane. The Book of Things: A Subtitle. New York: Penguin, 2001.",
+    "expected": {
+      "title": "The Book of Things: A Subtitle",
+      "authors": ["Doe, Jane"],
+      "year": "2001",
+      "journal": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "doi": "",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "doi-01",
+    "class": "Identifier",
+    "raw": "Patel, R., & Novak, J. (2022). Graph neural networks for materials discovery. npj Computational Materials, 8, 112. https://doi.org/10.1038/s41524-022-00812-9",
+    "expected": {
+      "title": "Graph neural networks for materials discovery",
+      "authors": ["Patel, R.", "Novak, J."],
+      "year": "2022",
+      "journal": "npj Computational Materials",
+      "volume": "8",
+      "issue": "",
+      "pages": "112",
+      "doi": "10.1038/s41524-022-00812-9",
+      "publisher": ""
+    }
+  },
+  {
+    "id": "doi-02",
+    "class": "Identifier",
+    "raw": "Whitfield, S. (2013). Soil carbon and smallholder agriculture. Agricultural Systems, 121, 24-33. doi:10.1016/j.agsy.2013.06.003",
+    "expected": {
+      "title": "Soil carbon and smallholder agriculture",
+      "authors": ["Whitfield, S."],
+      "year": "2013",
+      "journal": "Agricultural Systems",
+      "volume": "121",
+      "issue": "",
+      "pages": "24-33",
+      "doi": "10.1016/j.agsy.2013.06.003",
+      "publisher": ""
+    }
+  }
+]

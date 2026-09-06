@@ -251,6 +251,12 @@ _VOLUME_LABEL = re.compile(r"\bvol(?:ume)?\.?\s*(\d{1,4})", re.IGNORECASE)
 _ISSUE_LABEL = re.compile(r"\b(?:no|iss(?:ue)?)\.?\s*(\d{1,4})", re.IGNORECASE)
 _PAGES_LABEL = re.compile(r"\bpp?\.?\s*(\d{1,5}\s*-\s*\d{1,5}|\d{1,5})\b", re.IGNORECASE)
 _VOLUME_ISSUE_COMBO = re.compile(r"\b(\d{1,4})\s*\((\d{1,4})\)")
+
+#: The APA form carrying a volume with no issue: "Nature Geoscience, 12,
+#: 455-462". A bare number between commas is otherwise just a number, so this
+#: is anchored on both commas *and* on a locator following it, and the caller
+#: rejects a value in the calendar range so a stray year cannot pass as one.
+_BARE_VOLUME_PAGES = re.compile(r",[ \t]*(?P<volume>\d{1,4})[ \t]*,[ \t]*(?P<pages>\d[\w-]*)")
 _PAGE_RANGE = re.compile(r"\b(\d{1,5})\s*-\s*(\d{1,5})\b")
 
 
@@ -721,6 +727,18 @@ def _extract_journal(text: str, *, title: str = "", tail: re.Match[str] | None =
     return ""
 
 
+def _looks_like_year(value: str) -> bool:
+    """Whether a bare number is really a calendar year.
+
+    Args:
+        value: The digits under test.
+
+    Returns:
+        True when the value is four digits inside the calendar range.
+    """
+    return len(value) == 4 and 1000 <= int(value) <= 2100
+
+
 def _extract_volume_issue_pages(
     text: str, *, tail: re.Match[str] | None = None
 ) -> tuple[str, str, str]:
@@ -770,6 +788,14 @@ def _extract_volume_issue_pages(
         if combo:
             volume = volume or combo.group(1)
             issue = issue or combo.group(2)
+
+    if not volume:
+        bare = _BARE_VOLUME_PAGES.search(_YEAR_PAREN.sub(" ", masked))
+        # A four-digit number in the calendar range is a year that escaped the
+        # parenthesis strip, not a volume.
+        if bare and not _looks_like_year(bare.group("volume")):
+            volume = bare.group("volume")
+            pages = pages or bare.group("pages")
 
     if not pages:
         for match in _PAGE_RANGE.finditer(masked):
