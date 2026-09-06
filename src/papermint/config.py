@@ -7,13 +7,33 @@ never import Streamlit or any heavyweight runtime.
 
 from __future__ import annotations
 
+from importlib import metadata
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Application metadata
 # ---------------------------------------------------------------------------
 APP_NAME = "PaperMint"
-APP_VERSION = "2.0.0"
+
+
+def _installed_version() -> str:
+    """Return the version recorded in the package metadata.
+
+    Read rather than repeated. The literal that used to live here drifted
+    four releases behind ``pyproject.toml`` because nothing forced them to
+    agree, and the sidebar showed the stale one on every screenshot.
+
+    Returns:
+        The installed version, or ``"0.0.0+unknown"`` when the package is
+        being run from a checkout that was never installed.
+    """
+    try:
+        return metadata.version("papermint")
+    except metadata.PackageNotFoundError:
+        return "0.0.0+unknown"
+
+
+APP_VERSION = _installed_version()
 APP_DESCRIPTION = "Extract, parse, and export academic citations from PDFs, images, and documents"
 APP_ICON = "🌿"
 APP_TAGLINE = "Extract · Parse · Export"
@@ -55,12 +75,6 @@ SPACY_MODEL = "en_core_web_sm"
 
 #: Hard ceiling on characters handed to the summarizer, to bound memory use.
 MAX_SUMMARY_INPUT_CHARS = 100_000
-
-# ---------------------------------------------------------------------------
-# CrossRef API
-# ---------------------------------------------------------------------------
-CROSSREF_API_BASE = "https://api.crossref.org/works"
-CROSSREF_MAILTO = "placeholder@example.com"  # Replace with real email for Polite Pool
 
 # ---------------------------------------------------------------------------
 # Bibliography section detection — header keywords
@@ -181,6 +195,12 @@ MAX_SUMMARY_SENTENCES = 10
 # ---------------------------------------------------------------------------
 #: Words per page used when a real page count is unavailable.
 WORDS_PER_PAGE = 300
+
+#: Worker threads used for a batch run. Files are independent, and the
+#: expensive work releases the GIL - PyMuPDF decodes in C, Tesseract runs as
+#: a subprocess - so threads help. Capped rather than unbounded because each
+#: worker holds a whole decoded document in memory.
+BATCH_MAX_WORKERS = 4
 
 #: Citations rendered per page in the results list.
 CITATIONS_PER_PAGE = 25

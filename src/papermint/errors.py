@@ -16,9 +16,6 @@ The hierarchy intentionally mirrors the pipeline stages:
     |-- ParsingError           (stages 2-4: text -> citations)
     |   +-- StyleDetectionError
     |-- SummarizationError     (stage 5: text -> summary)
-    |-- EnrichmentError        (CrossRef / external metadata)
-    |   |-- CrossRefNetworkError
-    |   +-- DoiNotFoundError
     +-- ExportError            (stage 6: citations -> file)
 """
 
@@ -109,33 +106,6 @@ class SummarizationError(PaperMintError):
 
 
 # ---------------------------------------------------------------------------
-# Metadata enrichment
-# ---------------------------------------------------------------------------
-
-
-class EnrichmentError(PaperMintError):
-    """Raised when external metadata enrichment fails."""
-
-    kind = "enrichment"
-
-
-class CrossRefNetworkError(EnrichmentError):
-    """Raised when the CrossRef API is unreachable or rate limited."""
-
-    kind = "crossref_network"
-
-
-class DoiNotFoundError(EnrichmentError):
-    """Raised when a DOI is well-formed but not present in CrossRef."""
-
-    kind = "doi_not_found"
-
-
-# ---------------------------------------------------------------------------
-# Stage 6 — Export
-# ---------------------------------------------------------------------------
-
-
 class ExportError(PaperMintError):
     """Raised when citations cannot be serialised to the requested format."""
 
@@ -144,10 +114,7 @@ class ExportError(PaperMintError):
 
 __all__ = [
     "CorruptedDocumentError",
-    "CrossRefNetworkError",
-    "DoiNotFoundError",
     "EmptyDocumentError",
-    "EnrichmentError",
     "ExportError",
     "ExtractionError",
     "OcrUnavailableError",

@@ -195,7 +195,7 @@ def render() -> None:
             (
                 "Framework-independent core",
                 (
-                    "Extraction, parsing, enrichment and export import nothing from "
+                    "Extraction, parsing, formatting and export import nothing from "
                     "Streamlit, so the same engine runs headless from a command line."
                 ),
             ),

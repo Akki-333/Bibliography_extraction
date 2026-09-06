@@ -17,10 +17,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PACKAGE_ROOT = PROJECT_ROOT / "src" / "papermint"
 
 #: Packages that must never import Streamlit.
-DOMAIN_PACKAGES = ("extractors", "parsers", "enrichment", "exporters", "formatters")
+DOMAIN_PACKAGES = ("extractors", "parsers", "exporters", "formatters")
 
 #: Domain modules that live directly in the package root.
-DOMAIN_MODULES = ("models.py", "config.py", "errors.py", "pipeline.py")
+DOMAIN_MODULES = ("models.py", "config.py", "errors.py", "pipeline.py", "dedupe.py")
 
 
 def _domain_files() -> list[Path]:
