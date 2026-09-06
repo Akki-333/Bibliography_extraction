@@ -328,6 +328,14 @@ def _render_pane(entry: BatchFileResult) -> None:
                     key_prefix="pm_batch_doc_export",
                     default_name=safe_filename(entry.filename.rsplit(".", 1)[0]),
                 )
+            from papermint.ui.navigation import page
+
+            st.page_link(
+                page("styles"),
+                label="Format references",
+                icon=":material/format_quote:",
+                help="Format this document's references in APA, MLA, IEEE or Chicago",
+            )
 
     st.divider()
 
@@ -396,6 +404,13 @@ def _render_library(result: BatchResult) -> None:
         key_prefix="batch",
         default_name="merged_bibliography",
         title="Merged export",
+    )
+    from papermint.ui.navigation import page
+
+    st.page_link(
+        page("styles"),
+        label="Format merged library in Reference Formatter",
+        icon=":material/format_quote:",
     )
     st.divider()
     sources = sum(1 for f in result.files if f.citation_count)
