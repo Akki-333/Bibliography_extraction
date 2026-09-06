@@ -360,10 +360,10 @@ PaperMint/
 │           ├── components/         # primitives, citation_card, citation_browser,
 │           │                       #   export_panel, progress, file_uploader
 │           └── pages/              # home, extract, batch, style_studio, about
-├── tests/                          # 459 tests, no network calls
+├── tests/                          # 472 tests, no network calls
 │   ├── test_architecture.py        # Enforces the layering rules (241)
-│   ├── test_ui.py                  # Components, state and every page (58)
-│   ├── test_normalization.py       # Text repair and parser guards (44)
+│   ├── test_ui.py                  # Components, state and every page (66)
+│   ├── test_normalization.py       # Text repair and parser guards (52)
 │   ├── test_parsers.py             # Detection and multi-block collection (40)
 │   ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
 │   ├── test_formatters.py          # Style rendering and its honesty rules (23)
@@ -502,8 +502,8 @@ in memory with PyMuPDF.
 | Suite | Tests | Covers |
 |:---|---:|:---|
 | `test_architecture.py` | 241 | Every layering and coding rule, by parsing each module with `ast` |
-| `test_ui.py` | 58 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
-| `test_normalization.py` | 44 | Text repair, parser guards, surname particles, catalogue imprints |
+| `test_ui.py` | 66 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
+| `test_normalization.py` | 52 | Text repair, parser guards, surname particles, catalogue imprints |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
 | `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
 | `test_formatters.py` | 23 | Style rendering, list ordering, the honesty rules |
@@ -527,6 +527,35 @@ in memory with PyMuPDF.
 `Citation.source_file` is already populated by the pipeline and is shown on
 every entry in the batch page's merged library, so both the data and the
 surface for phase 4 are in place. Batch processing is currently sequential.
+
+---
+
+## What changed in 2.1.5
+
+A fabricated author that survived its own fix, and a light theme.
+
+**Fixed** - `Washington, D.C.` was still being read as an author. The previous
+guard covered only the colon form of a catalogue imprint; the same place with a
+full stop or a comma went on inventing a person. The guard now also declines a
+candidate whose given part is a state or province abbreviation, in the tight
+form only, so `Smith, D. C.` stays a person while `Washington, D.C.` does not.
+A parametrised test covers every punctuation an imprint uses.
+
+**Added** - a Settings gear at the foot of the sidebar with a Dark/Light
+switch. Every rule in the stylesheet is written against a design token, so one
+swapped `:root` block repaints the whole interface - no JavaScript and no
+reload - and a motion token eases the change rather than flashing it. Card
+bands and notice tones now carry CSS variable references instead of literals,
+which is what lets a palette swap reach markup built at render time.
+
+**Fixed** - `build_navigation(only=...)` handed a cached page object to a
+single-page navigation, and Streamlit set its default flag in place, so a later
+full navigation saw two defaults and raised. It never bit the app, which only
+ever builds the full navigation, but it made the test suite order-dependent.
+
+**Known limitation** - `.streamlit/config.toml` declares the dark palette to
+Streamlit itself and cannot change at runtime, so chrome Streamlit renders into
+its own portals stays dark in light mode.
 
 ---
 
