@@ -360,9 +360,9 @@ PaperMint/
 │           ├── components/         # primitives, citation_card, citation_browser,
 │           │                       #   export_panel, progress, file_uploader
 │           └── pages/              # home, extract, batch, style_studio, about
-├── tests/                          # 472 tests, no network calls
+├── tests/                          # 475 tests, no network calls
 │   ├── test_architecture.py        # Enforces the layering rules (241)
-│   ├── test_ui.py                  # Components, state and every page (66)
+│   ├── test_ui.py                  # Components, state and every page (69)
 │   ├── test_normalization.py       # Text repair and parser guards (52)
 │   ├── test_parsers.py             # Detection and multi-block collection (40)
 │   ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
@@ -502,7 +502,7 @@ in memory with PyMuPDF.
 | Suite | Tests | Covers |
 |:---|---:|:---|
 | `test_architecture.py` | 241 | Every layering and coding rule, by parsing each module with `ast` |
-| `test_ui.py` | 66 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
+| `test_ui.py` | 69 | Markup, escaping, components, sticky state, the processing flow, the batch workbench, all five pages via `AppTest` |
 | `test_normalization.py` | 52 | Text repair, parser guards, surname particles, catalogue imprints |
 | `test_parsers.py` | 40 | Detection, multi-block collection, splitting, style, fields |
 | `test_pipeline.py` | 25 | Orchestration, batch isolation, registry, CLI |
@@ -527,6 +527,25 @@ in memory with PyMuPDF.
 `Citation.source_file` is already populated by the pipeline and is shown on
 every entry in the batch page's merged library, so both the data and the
 surface for phase 4 are in place. Batch processing is currently sequential.
+
+---
+
+## What changed in 2.1.6
+
+The light theme, rebuilt around measured contrast.
+
+**Fixed** - most of the sidebar was never bound to the design tokens, so it
+kept Streamlit's own dark-theme colours and simply disappeared on a light
+ground: the navigation, the section labels, the captions and the Settings
+panel. Every one is now coloured from a token.
+
+**Changed** - the light palette has three genuinely distinct surfaces, borders
+that are visible against the canvas, and a deeper accent, because mint cannot
+carry text on white. Every text pair now clears WCAG AA and body text clears
+AAA, and a test computes the ratios so a palette edit cannot quietly undo it.
+
+**Known** - the dark palette has two pairs below AA. They are unchanged and
+pinned by name in the suite, so a third cannot appear unnoticed.
 
 ---
 
