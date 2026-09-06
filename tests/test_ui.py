@@ -124,7 +124,7 @@ def test_both_palettes_define_every_token():
 
 def test_each_mode_renders_its_own_palette():
     assert "--pm-color-canvas: #0F172A;" in css_variables("dark")
-    assert "--pm-color-canvas: #EEF2F8;" in css_variables("light")
+    assert "--pm-color-canvas: #F8FAFC;" in css_variables("light")
     # An unknown mode must not take the page down mid-render.
     assert css_variables("nonsense") == css_variables("dark")
 

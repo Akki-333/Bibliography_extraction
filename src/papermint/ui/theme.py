@@ -44,6 +44,15 @@ COLOR: Final[dict[str, str]] = {
     "caution": "#FBBF24",
     "critical": "#F87171",
     "info": "#60A5FA",
+    # Buttons
+    "btn-primary-bg": "#34D399",
+    "btn-primary-text": "#052E20",
+    "btn-primary-hover-bg": "#6EE7B7",
+    "btn-primary-border": "#34D399",
+    "btn-secondary-bg": "#1D293D",
+    "btn-secondary-text": "#EEF2F8",
+    "btn-secondary-hover-bg": "#27354C",
+    "btn-secondary-border": "#3A4B66",
 }
 
 #: Translucent fills, used for chips and hover states.
@@ -75,45 +84,54 @@ LIGHT_COLOR: Final[dict[str, str]] = {
     "accent-bright": "#065F46",
     "accent-deep": "#10B981",
     "accent-ink": "#FFFFFF",
-    # Three real steps. The canvas is tinted so a white card lifts off it
-    # without needing a heavy border, and the sunken step is darker than the
-    # canvas so the sidebar reads as a distinct plane rather than a margin.
-    "canvas": "#EEF2F8",
+    # Three pristine steps. The canvas is a crisp luminous off-white, cards and
+    # panels are pure white, and the sidebar is a refined clean slate ground.
+    "canvas": "#F8FAFC",
     "surface": "#FFFFFF",
     "surface-raised": "#FFFFFF",
-    "surface-sunken": "#E2E8F1",
-    # Borders that are actually visible. The old #DDE4EE vanished against a
-    # near-white canvas, which is half of why the theme looked washed out.
-    "border": "#BAC7DA",
-    "border-strong": "#94A3B8",
-    # A real hierarchy: 16:1, 8:1 and 5:1 against white. The old muted step sat
-    # too close to the faint one, so nothing looked deliberate.
-    "text": "#0B1220",
-    "text-muted": "#3E4C61",
-    "text-faint": "#5A6779",
+    "surface-sunken": "#E2E8F0",
+    # Borders that provide crisp architectural structure.
+    "border": "#E2E8F0",
+    "border-strong": "#CBD5E1",
+    # High-contrast typographic hierarchy: deep obsidian black for primary text,
+    # rich charcoal slate for muted, and readable slate for faint.
+    "text": "#090D16",
+    "text-muted": "#334155",
+    "text-faint": "#475569",
     # Saturated enough to read as status at chip size, dark enough to pass
     # contrast as text on their own tints.
     "positive": "#047857",
     "caution": "#96540A",
     "critical": "#C81E1E",
     "info": "#1D4ED8",
+    # High-contrast luxury black & white buttons:
+    # Primary: Solid obsidian pitch black with pure white text.
+    # Secondary: Crisp pure white with deep black text and clean slate border.
+    "btn-primary-bg": "#0F172A",
+    "btn-primary-text": "#FFFFFF",
+    "btn-primary-hover-bg": "#1E293B",
+    "btn-primary-border": "#0F172A",
+    "btn-secondary-bg": "#FFFFFF",
+    "btn-secondary-text": "#090D16",
+    "btn-secondary-hover-bg": "#F8FAFC",
+    "btn-secondary-border": "#CBD5E1",
 }
 
 #: Translucent fills for the light palette. Tints are stronger than their dark
 #: counterparts because a wash that reads clearly on slate disappears on white.
 LIGHT_ALPHA: Final[dict[str, str]] = {
     "accent-00": "rgba(4, 120, 87, 0)",
-    "accent-08": "rgba(4, 120, 87, 0.07)",
-    "accent-14": "rgba(4, 120, 87, 0.12)",
+    "accent-08": "rgba(4, 120, 87, 0.08)",
+    "accent-14": "rgba(4, 120, 87, 0.14)",
     "accent-24": "rgba(4, 120, 87, 0.28)",
-    "caution-12": "rgba(150, 84, 10, 0.11)",
+    "caution-12": "rgba(150, 84, 10, 0.12)",
     "caution-28": "rgba(150, 84, 10, 0.30)",
-    "critical-12": "rgba(200, 30, 30, 0.10)",
+    "critical-12": "rgba(200, 30, 30, 0.12)",
     "critical-28": "rgba(200, 30, 30, 0.28)",
-    "info-12": "rgba(29, 78, 216, 0.10)",
+    "info-12": "rgba(29, 78, 216, 0.12)",
     # Cool and soft. A light theme gets its depth from shadow, where a dark one
     # gets it from a lighter surface, so this carries more weight here.
-    "shadow": "rgba(15, 23, 42, 0.10)",
+    "shadow": "rgba(15, 23, 42, 0.08)",
 }
 
 #: The two palettes by name. ``mode`` travels as a plain string so that session
@@ -227,8 +245,8 @@ RADIUS: Final[dict[str, str]] = {
 
 #: Two elevation levels only; more reads as noise on a dark ground.
 SHADOW: Final[dict[str, str]] = {
-    "raised": f"0 1px 2px {ALPHA['shadow']}",
-    "floating": f"0 12px 32px -8px {ALPHA['shadow']}",
+    "raised": "0 1px 3px var(--pm-fill-shadow), 0 1px 2px var(--pm-fill-shadow)",
+    "floating": "0 12px 32px -8px var(--pm-fill-shadow)",
 }
 
 #: Shared easing and duration.

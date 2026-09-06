@@ -111,55 +111,199 @@ def _chrome() -> str:
 
 [data-testid="stHeader"] { background: transparent; }
 
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div:first-child,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"] {
+    background: var(--pm-color-surface-sunken) !important;
+}
+
 [data-testid="stSidebar"] {
-    background: var(--pm-color-surface-sunken);
-    border-right: 1px solid var(--pm-color-border);
+    border-right: 1px solid var(--pm-color-border-strong);
+}
+
+/* --- Sidebar Collapse & Expand Controls (Slider Arrow) ---------------- */
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebarCollapseButton"] button *,
+[data-testid="collapsedControl"] button,
+[data-testid="collapsedControl"] button *,
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"],
+[data-testid="collapsedControl"] [data-testid="stIconMaterial"] {
+    color: var(--pm-color-text) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebarCollapseButton"] button:hover,
+[data-testid="collapsedControl"] button:hover {
+    color: var(--pm-color-accent-bright) !important;
+    background: var(--pm-fill-accent-08) !important;
+}
+[data-testid="stSidebarCollapseButton"] button:hover *,
+[data-testid="collapsedControl"] button:hover *,
+[data-testid="stSidebarCollapseButton"] button:hover [data-testid="stIconMaterial"],
+[data-testid="collapsedControl"] button:hover [data-testid="stIconMaterial"] {
+    color: var(--pm-color-accent-bright) !important;
+}
+
+/* --- Clean Top-Right Header Chrome (Clean 3 dots icon, no square) ------ */
+[data-testid="stHeader"] {
+    background: transparent !important;
+}
+[data-testid="stHeader"] button,
+[data-testid="stToolbar"] button,
+[data-testid="stMainMenu"] button,
+[data-testid="stMainMenuButton"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--pm-color-text-muted) !important;
+}
+[data-testid="stHeader"] button:hover,
+[data-testid="stToolbar"] button:hover,
+[data-testid="stMainMenu"] button:hover,
+[data-testid="stMainMenuButton"]:hover {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--pm-color-text) !important;
+}
+/* Ensure the SVG bounding box path in the 3-dots icon is never filled */
+[data-testid="stHeader"] button svg path[fill="none"],
+[data-testid="stToolbar"] button svg path[fill="none"],
+[data-testid="stMainMenu"] button svg path[fill="none"],
+[data-testid="stMainMenuButton"] svg path[fill="none"] {
+    fill: none !important;
 }
 
 /* The navigation, bound to our tokens.
    Streamlit colours these from its own theme, which `.streamlit/config.toml`
    fixes to the dark palette and which cannot change at runtime. Left alone,
    the links kept their pale dark-theme text and disappeared entirely against
-   a light sidebar - the single worst thing about the first light build. Every
-   colour Streamlit would otherwise choose is therefore set here. */
+   a light sidebar. Every colour Streamlit would otherwise choose is set here. */
 [data-testid="stSidebarNav"] a,
 [data-testid="stSidebarNavLink"] {
     color: var(--pm-color-text-muted);
     border-radius: var(--pm-radius-sm);
+    font-weight: 500;
+    margin: 2px 0;
     transition: background var(--pm-motion-fast), color var(--pm-motion-fast);
 }
 [data-testid="stSidebarNav"] a *,
 [data-testid="stSidebarNavLink"] * { color: inherit; }
 [data-testid="stSidebarNav"] a:hover,
 [data-testid="stSidebarNavLink"]:hover {
-    background: var(--pm-fill-accent-08);
+    background: rgba(255, 255, 255, 0.7);
     color: var(--pm-color-text);
 }
 [data-testid="stSidebarNav"] a[aria-current="page"],
 [data-testid="stSidebarNavLink"][aria-current="page"] {
-    background: var(--pm-fill-accent-14);
-    color: var(--pm-color-accent-bright);
+    background: var(--pm-color-surface) !important;
+    border: 1px solid var(--pm-color-border-strong) !important;
+    color: var(--pm-color-text) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
     font-weight: 600;
 }
-[data-testid="stSidebarNav"] a[aria-current="page"] * { color: inherit; }
+[data-testid="stSidebarNav"] a[aria-current="page"] * { color: inherit !important; }
 
-/* The section labels above each group of routes. */
+/* The section labels above each group of routes (Overview, Workspace, Tools, Help). */
 [data-testid="stSidebarNav"] ul > div,
-[data-testid="stSidebarNavSeparator"] {
-    color: var(--pm-color-text-faint);
-    border-color: var(--pm-color-border);
+[data-testid="stSidebarNav"] ul > div *,
+[data-testid="stSidebarNav"] ul > div span,
+[data-testid="stSidebarNav"] [data-testid="stSidebarNavSeparator"],
+[data-testid="stSidebarNav"] [data-testid="stSidebarNavSeparator"] *,
+[data-testid="stSidebarNavItems"] > div,
+[data-testid="stSidebarNavItems"] > div *,
+[data-testid="stSidebarNavItems"] > div span {
+    color: var(--pm-color-text-faint) !important;
+    font-size: var(--pm-text-micro);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 /* Captions elsewhere inherit correctly; inside the sidebar they inherit the
    framework's theme, so "Appearance" was invisible on the light ground. */
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {
-    color: var(--pm-color-text-faint);
+    color: var(--pm-color-text-faint) !important;
+    font-weight: 600;
 }
 
 hr, [data-testid="stDivider"] hr {
     border-color: var(--pm-color-border);
     margin: var(--pm-space-6) 0;
+}
+
+/* --- Widget Labels & Text Overrides ----------------------------------- */
+/* Streamlit's config.toml fixes textColor to #EEF2F8. Without explicit
+   overrides, labels and radio choices render white-on-white in light mode. */
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] *,
+[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] span {
+    color: var(--pm-color-text) !important;
+    font-family: var(--pm-font-ui);
+    font-size: var(--pm-text-sm);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+
+/* --- Radios & Checkboxes ---------------------------------------------- */
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] [data-baseweb="radio"],
+[data-testid="stRadio"] [data-baseweb="radio"] *,
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"],
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] span,
+[data-testid="stCheckbox"] label,
+[data-testid="stCheckbox"] [data-baseweb="checkbox"],
+[data-testid="stCheckbox"] [data-baseweb="checkbox"] *,
+[data-testid="stCheckbox"] [data-testid="stMarkdownContainer"],
+[data-testid="stCheckbox"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stCheckbox"] [data-testid="stMarkdownContainer"] span {
+    color: var(--pm-color-text) !important;
+    font-family: var(--pm-font-ui);
+    font-size: var(--pm-text-base);
+    font-weight: 500;
+}
+[data-testid="stRadio"] [role="radiogroup"] {
+    gap: var(--pm-space-4);
+}
+[data-testid="stRadio"] [data-baseweb="radio"] div:first-child {
+    background-color: var(--pm-color-surface);
+    border-color: var(--pm-color-border-strong);
+}
+
+/* --- Selectbox -------------------------------------------------------- */
+[data-baseweb="select"] > div {
+    background: var(--pm-color-surface) !important;
+    border: 1px solid var(--pm-color-border-strong) !important;
+    border-radius: var(--pm-radius-sm);
+    color: var(--pm-color-text) !important;
+    font-size: var(--pm-text-base);
+    box-shadow: var(--pm-shadow-raised);
+}
+[data-baseweb="select"] * {
+    color: var(--pm-color-text) !important;
+}
+[data-baseweb="select"] > div:hover { border-color: var(--pm-color-text); }
+[data-baseweb="popover"] [role="listbox"] {
+    background: var(--pm-color-surface) !important;
+    border: 1px solid var(--pm-color-border-strong) !important;
+    border-radius: var(--pm-radius-md) !important;
+    box-shadow: var(--pm-shadow-floating) !important;
+}
+[data-baseweb="popover"] [role="option"] {
+    background: var(--pm-color-surface) !important;
+    color: var(--pm-color-text) !important;
+}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+    background: var(--pm-color-surface-sunken) !important;
+    color: var(--pm-color-text) !important;
 }
 
 /* --- Tabs ------------------------------------------------------------- */
@@ -187,61 +331,82 @@ hr, [data-testid="stDivider"] hr {
 .stTabs [data-baseweb="tab-highlight"] { background: var(--pm-color-accent); height: 2px; }
 .stTabs [data-baseweb="tab-border"] { display: none; }
 
-/* --- Buttons ---------------------------------------------------------- */
+/* --- Buttons (Black & White Modern Hierarchy) ------------------------- */
 .stButton button, .stDownloadButton button, .stLinkButton a, .stPopover button {
     font-family: var(--pm-font-ui);
     font-size: var(--pm-text-base);
     font-weight: 500;
     border-radius: var(--pm-radius-sm);
-    border: 1px solid var(--pm-color-border-strong);
-    background: var(--pm-color-surface-raised);
-    color: var(--pm-color-text);
+    border: 1px solid var(--pm-color-btn-secondary-border);
+    background: var(--pm-color-btn-secondary-bg);
+    color: var(--pm-color-btn-secondary-text) !important;
     padding: var(--pm-space-2) var(--pm-space-4);
     transition: border-color var(--pm-motion-fast), background var(--pm-motion-fast),
-                color var(--pm-motion-fast);
-    box-shadow: none;
+                color var(--pm-motion-fast), transform var(--pm-motion-fast),
+                box-shadow var(--pm-motion-fast);
+    box-shadow: var(--pm-shadow-raised);
+}
+.stButton button *, .stDownloadButton button *,
+.stLinkButton a *, .stPopover button * {
+    color: inherit !important;
 }
 .stButton button:hover, .stDownloadButton button:hover,
 .stLinkButton a:hover, .stPopover button:hover {
-    border-color: var(--pm-color-accent);
-    color: var(--pm-color-accent-bright);
-    background: var(--pm-fill-accent-08);
+    border-color: var(--pm-color-text);
+    color: var(--pm-color-btn-secondary-text) !important;
+    background: var(--pm-color-btn-secondary-hover-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.stButton button:active, .stDownloadButton button:active,
+.stLinkButton a:active, .stPopover button:active {
+    transform: translateY(1px);
 }
 .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] {
-    background: var(--pm-color-accent);
-    border-color: var(--pm-color-accent);
-    color: var(--pm-color-accent-ink);
+    background: var(--pm-color-btn-primary-bg) !important;
+    border: 1px solid var(--pm-color-btn-primary-border) !important;
+    color: var(--pm-color-btn-primary-text) !important;
     font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.stButton button[kind="primary"] *, .stDownloadButton button[kind="primary"] * {
+    color: var(--pm-color-btn-primary-text) !important;
 }
 .stButton button[kind="primary"]:hover, .stDownloadButton button[kind="primary"]:hover {
-    background: var(--pm-color-accent-bright);
-    border-color: var(--pm-color-accent-bright);
-    color: var(--pm-color-accent-ink);
+    background: var(--pm-color-btn-primary-hover-bg) !important;
+    border-color: var(--pm-color-btn-primary-hover-bg) !important;
+    color: var(--pm-color-btn-primary-text) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+}
+.stButton button[kind="primary"]:active, .stDownloadButton button[kind="primary"]:active {
+    transform: translateY(1px);
 }
 .stButton button:focus-visible, .stDownloadButton button:focus-visible {
-    outline: 2px solid var(--pm-color-accent);
+    outline: 2px solid var(--pm-color-btn-primary-bg);
     outline-offset: 2px;
 }
 
-/* --- Inputs ----------------------------------------------------------- */
+/* --- Inputs & Textareas ----------------------------------------------- */
 .stTextInput input, .stTextArea textarea, .stNumberInput input {
-    background: var(--pm-color-surface-sunken);
-    border: 1px solid var(--pm-color-border);
+    background: var(--pm-color-surface) !important;
+    border: 1px solid var(--pm-color-border-strong) !important;
     border-radius: var(--pm-radius-sm);
-    color: var(--pm-color-text);
+    color: var(--pm-color-text) !important;
+    font-family: var(--pm-font-ui);
     font-size: var(--pm-text-base);
+    line-height: 1.55;
+    box-shadow: var(--pm-shadow-raised);
+    transition: border-color var(--pm-motion-fast), box-shadow var(--pm-motion-fast);
 }
-.stTextInput input:focus, .stTextArea textarea:focus {
-    border-color: var(--pm-color-accent);
-    box-shadow: 0 0 0 3px var(--pm-fill-accent-14);
+.stTextInput input::placeholder, .stTextArea textarea::placeholder {
+    color: var(--pm-color-text-faint) !important;
+    opacity: 0.85;
 }
-[data-baseweb="select"] > div {
-    background: var(--pm-color-surface-sunken);
-    border-color: var(--pm-color-border);
-    border-radius: var(--pm-radius-sm);
-    font-size: var(--pm-text-base);
+.stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+    background: var(--pm-color-surface) !important;
+    border-color: var(--pm-color-btn-primary-bg) !important;
+    box-shadow: 0 0 0 2px var(--pm-fill-accent-24) !important;
+    outline: none;
 }
-[data-baseweb="select"] > div:hover { border-color: var(--pm-color-border-strong); }
 
 /* --- File uploader ---------------------------------------------------- */
 [data-testid="stFileUploaderDropzone"] {
@@ -249,11 +414,30 @@ hr, [data-testid="stDivider"] hr {
     border: 1px dashed var(--pm-color-border-strong);
     border-radius: var(--pm-radius-lg);
     padding: var(--pm-space-6);
+    box-shadow: var(--pm-shadow-raised);
     transition: border-color var(--pm-motion-base), background var(--pm-motion-base);
 }
 [data-testid="stFileUploaderDropzone"]:hover {
     border-color: var(--pm-color-accent);
     background: var(--pm-fill-accent-08);
+}
+[data-testid="stFileUploaderDropzone"] button {
+    background: var(--pm-color-btn-primary-bg) !important;
+    border: 1px solid var(--pm-color-btn-primary-border) !important;
+    color: var(--pm-color-btn-primary-text) !important;
+    font-weight: 600;
+}
+[data-testid="stFileUploaderDropzone"] button * {
+    color: var(--pm-color-btn-primary-text) !important;
+}
+[data-testid="stFileUploaderDropzone"] button:hover {
+    background: var(--pm-color-btn-primary-hover-bg) !important;
+}
+[data-testid="stFileUploaderDropzone"] * {
+    color: var(--pm-color-text);
+}
+[data-testid="stFileUploaderDropzone"] [data-testid="stFileUploaderDropzoneInstructions"] * {
+    color: var(--pm-color-text-muted);
 }
 
 /* --- Expanders -------------------------------------------------------- */
@@ -261,21 +445,21 @@ hr, [data-testid="stDivider"] hr {
     background: var(--pm-color-surface);
     border: 1px solid var(--pm-color-border);
     border-radius: var(--pm-radius-md);
+    box-shadow: var(--pm-shadow-raised);
     overflow: hidden;
 }
 [data-testid="stExpander"] summary {
     font-size: var(--pm-text-base);
-    font-weight: 500;
+    font-weight: 600;
     background: var(--pm-color-surface);
     color: var(--pm-color-text);
 }
 [data-testid="stExpander"] summary * { color: inherit; }
 [data-testid="stExpander"] summary:hover { color: var(--pm-color-accent-bright); }
-/* Streamlit paints the open panel from its own theme, which is why the
-   Settings block stayed dark while the rest of the sidebar went light. */
 [data-testid="stExpanderDetails"] {
     background: var(--pm-color-surface);
     color: var(--pm-color-text);
+    border-top: 1px solid var(--pm-color-border);
 }
 [data-testid="stExpanderIcon"] { color: var(--pm-color-text-muted); }
 
@@ -284,6 +468,7 @@ hr, [data-testid="stDivider"] hr {
     border-radius: var(--pm-radius-md);
     border: 1px solid var(--pm-color-border);
     font-size: var(--pm-text-base);
+    box-shadow: var(--pm-shadow-raised);
 }
 
 /* --- Progress --------------------------------------------------------- */
@@ -355,6 +540,7 @@ def _components() -> str:
     border: 1px solid var(--pm-color-border);
     border-radius: var(--pm-radius-md);
     padding: var(--pm-space-4) var(--pm-space-5);
+    box-shadow: var(--pm-shadow-raised);
 }
 .pm-stat-label {
     display: flex;
@@ -420,7 +606,9 @@ def _components() -> str:
     border-left: 2px solid var(--pm-band, var(--pm-color-border-strong));
     border-radius: var(--pm-radius-md);
     padding: var(--pm-space-5);
-    transition: border-color var(--pm-motion-fast), background var(--pm-motion-fast);
+    box-shadow: var(--pm-shadow-raised);
+    transition: border-color var(--pm-motion-fast), background var(--pm-motion-fast),
+                box-shadow var(--pm-motion-fast);
     animation: pm-rise var(--pm-motion-enter) both;
     animation-delay: calc(var(--pm-step, 0) * var(--pm-motion-stagger));
 }
@@ -428,6 +616,7 @@ def _components() -> str:
     border-color: var(--pm-color-border-strong);
     border-left-color: var(--pm-band, var(--pm-color-border-strong));
     background: var(--pm-color-surface-raised);
+    box-shadow: var(--pm-shadow-floating);
 }
 .pm-card-index {
     font-family: var(--pm-font-mono);
@@ -799,9 +988,13 @@ def _components() -> str:
     border: 1px solid var(--pm-color-border);
     border-radius: var(--pm-radius-lg);
     padding: var(--pm-space-5);
-    transition: border-color var(--pm-motion-fast);
+    box-shadow: var(--pm-shadow-raised);
+    transition: border-color var(--pm-motion-fast), box-shadow var(--pm-motion-fast);
 }
-.pm-tile:hover { border-color: var(--pm-color-border-strong); }
+.pm-tile:hover {
+    border-color: var(--pm-color-border-strong);
+    box-shadow: var(--pm-shadow-floating);
+}
 .pm-tile-icon {
     display: inline-flex;
     align-items: center;
@@ -842,6 +1035,7 @@ def _components() -> str:
     border-left: 3px solid var(--pm-color-accent);
     border-radius: var(--pm-radius-lg);
     padding: var(--pm-space-6);
+    box-shadow: var(--pm-shadow-raised);
     margin-bottom: var(--pm-space-8);
 }
 .pm-overview-title {
@@ -949,9 +1143,11 @@ def _components() -> str:
 .pm-empty {
     text-align: center;
     padding: var(--pm-space-12) var(--pm-space-6);
-    border: 1px dashed var(--pm-color-border);
+    background: var(--pm-color-surface);
+    border: 1px dashed var(--pm-color-border-strong);
     border-radius: var(--pm-radius-lg);
     color: var(--pm-color-text-faint);
+    box-shadow: var(--pm-shadow-raised);
 }
 .pm-empty-title {
     font-size: var(--pm-text-md);
@@ -978,9 +1174,10 @@ def _components() -> str:
     gap: var(--pm-space-3);
     padding: var(--pm-space-3) var(--pm-space-4);
     border: 1px solid var(--pm-color-border);
-    border-left: 2px solid var(--pm-fill-accent-24);
+    border-left: 2px solid var(--pm-color-accent);
     border-radius: var(--pm-radius-sm);
-    background: var(--pm-color-surface-sunken);
+    background: var(--pm-color-surface);
+    box-shadow: var(--pm-shadow-raised);
     animation: pm-slide var(--pm-motion-enter) both;
     animation-delay: calc(var(--pm-step, 0) * var(--pm-motion-stagger));
 }
@@ -1074,29 +1271,43 @@ def _components() -> str:
     gap: var(--pm-space-2);
     margin-bottom: var(--pm-space-2);
 }
-[data-testid="stBaseButton-pills"],
-[data-testid="stBaseButton-pillsActive"] {
+[data-testid="stBaseButton-pills"] {
     border-radius: var(--pm-radius-pill);
-    border: 1px solid var(--pm-color-border);
+    border: 1px solid var(--pm-color-border-strong);
     background: var(--pm-color-surface);
-    color: var(--pm-color-text-muted);
+    color: var(--pm-color-text-muted) !important;
     font-family: var(--pm-font-ui);
     font-size: var(--pm-text-sm);
     font-weight: 500;
     padding: var(--pm-space-2) var(--pm-space-4);
+    box-shadow: var(--pm-shadow-raised);
     transition: border-color var(--pm-motion-fast), background var(--pm-motion-fast),
                 color var(--pm-motion-fast);
 }
+[data-testid="stBaseButton-pills"] * {
+    color: var(--pm-color-text-muted) !important;
+}
 [data-testid="stBaseButton-pills"]:hover {
-    border-color: var(--pm-color-border-strong);
+    border-color: var(--pm-color-text);
     background: var(--pm-color-surface-raised);
-    color: var(--pm-color-text);
+    color: var(--pm-color-text) !important;
+}
+[data-testid="stBaseButton-pills"]:hover * {
+    color: var(--pm-color-text) !important;
 }
 [data-testid="stBaseButton-pillsActive"] {
-    border-color: var(--pm-fill-accent-24);
-    background: var(--pm-fill-accent-14);
-    color: var(--pm-color-accent-bright);
+    border-radius: var(--pm-radius-pill);
+    border: 1px solid var(--pm-color-btn-primary-border) !important;
+    background: var(--pm-color-btn-primary-bg) !important;
+    color: var(--pm-color-btn-primary-text) !important;
+    font-family: var(--pm-font-ui);
+    font-size: var(--pm-text-sm);
     font-weight: 600;
+    padding: var(--pm-space-2) var(--pm-space-4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+[data-testid="stBaseButton-pillsActive"] * {
+    color: var(--pm-color-btn-primary-text) !important;
 }
 
 /* Provenance on a merged listing is reference material, not part of the
