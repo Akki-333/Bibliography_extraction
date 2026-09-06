@@ -48,6 +48,26 @@ def _renderer(name: str) -> Any:
     }[name]
 
 
+def _build_page(name: str, *, default: bool) -> Any:
+    """Construct one page object for a route.
+
+    Args:
+        name: The route name.
+        default: Whether this page is the navigation's default.
+
+    Returns:
+        A fresh ``st.Page``.
+    """
+    _name, title, icon, url_path, _section = next(r for r in _ROUTES if r[0] == name)
+    return st.Page(
+        _renderer(name),
+        title=title,
+        icon=icon,
+        url_path=url_path,
+        default=default,
+    )
+
+
 def build_pages() -> dict[str, Any]:
     """Build, cache and return every page object by route name.
 
@@ -57,14 +77,8 @@ def build_pages() -> dict[str, Any]:
     if _PAGES:
         return _PAGES
 
-    for name, title, icon, url_path, _section in _ROUTES:
-        _PAGES[name] = st.Page(
-            _renderer(name),
-            title=title,
-            icon=icon,
-            url_path=url_path,
-            default=(name == "home"),
-        )
+    for name, *_rest in _ROUTES:
+        _PAGES[name] = _build_page(name, default=(name == "home"))
     return _PAGES
 
 
@@ -103,7 +117,12 @@ def build_navigation(only: str | None = None) -> Any:
     pages = build_pages()
 
     if only is not None:
-        return st.navigation([pages[only]])
+        # Deliberately not the cached object. A single-page navigation needs
+        # that page to be the default, and Streamlit sets the flag on the
+        # object it is handed - which would leave the shared cache holding two
+        # pages claiming to be default, so the next full navigation raises.
+        # Building a throwaway keeps the cache clean for the real app.
+        return st.navigation([_build_page(only, default=True)])
 
     sections: dict[str, list[Any]] = {}
     for name, _title, _icon, _url, section in _ROUTES:
