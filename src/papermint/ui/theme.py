@@ -63,18 +63,74 @@ ALPHA: Final[dict[str, str]] = {
     "shadow": "rgba(3, 7, 18, 0.45)",
 }
 
-#: Colour assigned to each confidence band.
-BAND_COLOR: Final[dict[ConfidenceBand, str]] = {
-    ConfidenceBand.HIGH: COLOR["positive"],
-    ConfidenceBand.MEDIUM: COLOR["caution"],
-    ConfidenceBand.LOW: COLOR["critical"],
+#: The light palette. Same roles, same names, so every rule written against a
+#: token keeps working; only the values invert. The accent darkens because mint
+#: at #34D399 on white fails contrast for text, while the same hue at #059669
+#: passes and still reads as the same brand.
+LIGHT_COLOR: Final[dict[str, str]] = {
+    "accent": "#059669",
+    "accent-bright": "#047857",
+    "accent-deep": "#10B981",
+    "accent-ink": "#FFFFFF",
+    "canvas": "#F5F7FA",
+    "surface": "#FFFFFF",
+    "surface-raised": "#FFFFFF",
+    "surface-sunken": "#EEF2F7",
+    "border": "#DDE4EE",
+    "border-strong": "#B4C0D2",
+    "text": "#0F172A",
+    "text-muted": "#475569",
+    "text-faint": "#64748B",
+    "positive": "#059669",
+    "caution": "#B45309",
+    "critical": "#DC2626",
+    "info": "#2563EB",
 }
 
-#: Translucent fill matching each confidence band.
-BAND_FILL: Final[dict[ConfidenceBand, str]] = {
-    ConfidenceBand.HIGH: ALPHA["accent-14"],
-    ConfidenceBand.MEDIUM: ALPHA["caution-12"],
-    ConfidenceBand.LOW: ALPHA["critical-12"],
+#: Translucent fills for the light palette. Tints are stronger than their dark
+#: counterparts because a wash that reads clearly on slate disappears on white.
+LIGHT_ALPHA: Final[dict[str, str]] = {
+    "accent-00": "rgba(5, 150, 105, 0)",
+    "accent-08": "rgba(5, 150, 105, 0.08)",
+    "accent-14": "rgba(5, 150, 105, 0.13)",
+    "accent-24": "rgba(5, 150, 105, 0.26)",
+    "caution-12": "rgba(180, 83, 9, 0.10)",
+    "caution-28": "rgba(180, 83, 9, 0.26)",
+    "critical-12": "rgba(220, 38, 38, 0.09)",
+    "critical-28": "rgba(220, 38, 38, 0.24)",
+    "info-12": "rgba(37, 99, 235, 0.09)",
+    "shadow": "rgba(15, 23, 42, 0.13)",
+}
+
+#: The two palettes by name. ``mode`` travels as a plain string so that session
+#: state, the stylesheet and the toggle all speak the same language.
+PALETTES: Final[dict[str, tuple[dict[str, str], dict[str, str]]]] = {
+    "dark": (COLOR, ALPHA),
+    "light": (LIGHT_COLOR, LIGHT_ALPHA),
+}
+
+#: The mode used when nothing has chosen one.
+DEFAULT_MODE: Final[str] = "dark"
+
+#: The palette token each confidence band points at.
+#:
+#: A card writes ``--pm-band`` into its own style attribute, so if that carried
+#: a literal hex the card would be painted in whichever palette happened to be
+#: loaded when the module was imported. It carries a ``var()`` reference
+#: instead, which the current ``:root`` resolves - the card is themed by the
+#: stylesheet like everything else, and section 9's rule that colour lives only
+#: here holds even for markup built at render time.
+BAND_TOKEN: Final[dict[ConfidenceBand, str]] = {
+    ConfidenceBand.HIGH: "--pm-color-positive",
+    ConfidenceBand.MEDIUM: "--pm-color-caution",
+    ConfidenceBand.LOW: "--pm-color-critical",
+}
+
+#: The translucent fill token matching each confidence band.
+BAND_FILL_TOKEN: Final[dict[ConfidenceBand, str]] = {
+    ConfidenceBand.HIGH: "--pm-fill-accent-14",
+    ConfidenceBand.MEDIUM: "--pm-fill-caution-12",
+    ConfidenceBand.LOW: "--pm-fill-critical-12",
 }
 
 
@@ -85,9 +141,10 @@ def band_color(band: ConfidenceBand) -> str:
         band: The confidence band.
 
     Returns:
-        A hex colour string.
+        A CSS ``var()`` reference, resolved against whichever palette is
+        loaded.
     """
-    return BAND_COLOR.get(band, COLOR["text-faint"])
+    return f"var({BAND_TOKEN.get(band, '--pm-color-text-faint')})"
 
 
 def band_fill(band: ConfidenceBand) -> str:
@@ -97,9 +154,10 @@ def band_fill(band: ConfidenceBand) -> str:
         band: The confidence band.
 
     Returns:
-        An ``rgba()`` colour string.
+        A CSS ``var()`` reference, resolved against whichever palette is
+        loaded.
     """
-    return BAND_FILL.get(band, ALPHA["info-12"])
+    return f"var({BAND_FILL_TOKEN.get(band, '--pm-fill-info-12')})"
 
 
 # ---------------------------------------------------------------------------
@@ -174,19 +232,29 @@ MOTION: Final[dict[str, str]] = {
     "enter": "460ms cubic-bezier(0.16, 1, 0.3, 1)",
     "reveal": "620ms cubic-bezier(0.16, 1, 0.3, 1)",
     "stagger": "55ms",
+    # The palette crossfade. Slower than interface feedback because the
+    # whole page changes at once and a fast swap reads as a flash.
+    "theme": "320ms cubic-bezier(0.4, 0, 0.2, 1)",
 }
 
 
-def css_variables() -> str:
-    """Render every token as a CSS custom property block.
+def css_variables(mode: str = DEFAULT_MODE) -> str:
+    """Render one palette's tokens as a CSS custom property block.
+
+    Args:
+        mode: ``"dark"`` or ``"light"``. An unknown mode falls back to the
+            default rather than raising, because this runs on every render and
+            a bad session value must not take the page down.
 
     Returns:
         The contents of a ``:root { ... }`` declaration, without the selector.
     """
+    colours, alphas = PALETTES.get(mode, PALETTES[DEFAULT_MODE])
+
     lines: list[str] = []
-    for name, value in COLOR.items():
+    for name, value in colours.items():
         lines.append(f"--pm-color-{name}: {value};")
-    for name, value in ALPHA.items():
+    for name, value in alphas.items():
         lines.append(f"--pm-fill-{name}: {value};")
     for name, value in FONT.items():
         lines.append(f"--pm-font-{name}: {value};")
@@ -205,11 +273,15 @@ def css_variables() -> str:
 
 __all__ = [
     "ALPHA",
-    "BAND_COLOR",
-    "BAND_FILL",
+    "BAND_FILL_TOKEN",
+    "BAND_TOKEN",
     "COLOR",
+    "DEFAULT_MODE",
     "FONT",
+    "LIGHT_ALPHA",
+    "LIGHT_COLOR",
     "MOTION",
+    "PALETTES",
     "RADIUS",
     "SHADOW",
     "SPACE",

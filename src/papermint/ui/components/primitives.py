@@ -16,18 +16,20 @@ from typing import Literal
 
 from papermint.ui.html import esc, render
 from papermint.ui.icons import icon
-from papermint.ui.theme import ALPHA, COLOR
 
 #: The visual tone a notice can take.
 NoticeTone = Literal["neutral", "positive", "caution", "critical", "info"]
 
-#: Border tint and background fill for each notice tone.
+#: Border tint and background fill for each notice tone, as CSS variable
+#: references rather than literals. A notice writes these into its own style
+#: attribute, so a literal would freeze it to whichever palette was loaded when
+#: this module was imported and the light theme would never reach it.
 _TONE_STYLE: dict[str, tuple[str, str]] = {
-    "neutral": (COLOR["border-strong"], COLOR["surface"]),
-    "positive": (COLOR["positive"], ALPHA["accent-08"]),
-    "caution": (COLOR["caution"], ALPHA["caution-12"]),
-    "critical": (COLOR["critical"], ALPHA["critical-12"]),
-    "info": (COLOR["info"], ALPHA["info-12"]),
+    "neutral": ("var(--pm-color-border-strong)", "var(--pm-color-surface)"),
+    "positive": ("var(--pm-color-positive)", "var(--pm-fill-accent-08)"),
+    "caution": ("var(--pm-color-caution)", "var(--pm-fill-caution-12)"),
+    "critical": ("var(--pm-color-critical)", "var(--pm-fill-critical-12)"),
+    "info": ("var(--pm-color-info)", "var(--pm-fill-info-12)"),
 }
 
 #: Default icon for each notice tone.

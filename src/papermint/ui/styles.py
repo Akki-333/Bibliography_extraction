@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from papermint.ui.theme import css_variables
+from papermint.ui.theme import DEFAULT_MODE, css_variables
 
 _FONT_IMPORT = (
     "@import url('https://fonts.googleapis.com/css2"
@@ -29,8 +29,11 @@ _FONT_IMPORT = (
 )
 
 
-def _foundations() -> str:
+def _foundations(mode: str) -> str:
     """Return font faces, design tokens and base typography.
+
+    Args:
+        mode: The palette to emit, "dark" or "light".
 
     Returns:
         A CSS fragment.
@@ -39,7 +42,7 @@ def _foundations() -> str:
 {_FONT_IMPORT}
 
 :root {{
-{css_variables()}
+{css_variables(mode)}
     --pm-max-width: 1180px;
 }}
 
@@ -52,8 +55,29 @@ html, body, .stApp {{
 
 .stApp {{
     background:
-        radial-gradient(900px 420px at 12% -8%, rgba(52, 211, 153, 0.07), transparent 65%),
+        radial-gradient(900px 420px at 12% -8%, var(--pm-fill-accent-08), transparent 65%),
         var(--pm-color-canvas);
+}}
+
+/* Switching palette repaints every surface at once. Without a transition the
+   swap lands as a flash; with one the page eases across, which is the whole
+   point of doing this in CSS variables rather than reloading a theme. Only
+   colour is animated - never layout - so nothing reflows while it runs. */
+.stApp,
+[data-testid="stSidebar"],
+.pm-card, .pm-stat, .pm-notice, .pm-tile, .pm-empty, .pm-source, .pm-defs {{
+    transition:
+        background-color var(--pm-motion-theme),
+        border-color var(--pm-motion-theme),
+        color var(--pm-motion-theme);
+}}
+
+@media (prefers-reduced-motion: reduce) {{
+    .stApp,
+    [data-testid="stSidebar"],
+    .pm-card, .pm-stat, .pm-notice, .pm-tile, .pm-empty, .pm-source, .pm-defs {{
+        transition: none;
+    }}
 }}
 
 .pm-icon {{
@@ -1085,21 +1109,31 @@ def _components() -> str:
 """
 
 
-def build_stylesheet() -> str:
-    """Assemble the complete stylesheet.
+def build_stylesheet(mode: str = DEFAULT_MODE) -> str:
+    """Assemble the complete stylesheet for one palette.
+
+    Args:
+        mode: "dark" or "light". Only the token block differs between
+            them; every rule is written against a token, so the whole
+            interface follows from this one argument.
 
     Returns:
         The CSS text, without the enclosing ``<style>`` tags.
     """
-    return f"{_foundations()}\n{_chrome()}\n{_components()}"
+    return f"{_foundations(mode)}\n{_chrome()}\n{_components()}"
 
 
-def inject_custom_css() -> None:
+def inject_custom_css(mode: str = DEFAULT_MODE) -> None:
     """Inject the PaperMint stylesheet into the running app.
 
-    Call once, immediately after ``st.set_page_config``.
+    Call once, immediately after ``st.set_page_config``. Streamlit reruns
+    the whole script on every interaction, so changing ``mode`` and letting
+    the rerun happen is all a theme switch needs: no JavaScript, no reload.
+
+    Args:
+        mode: The palette to render in.
     """
-    st.markdown(f"<style>{build_stylesheet()}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{build_stylesheet(mode)}</style>", unsafe_allow_html=True)
 
 
 __all__ = ["build_stylesheet", "inject_custom_css"]

@@ -40,7 +40,14 @@ from papermint.ui.navigation import route_names
 from papermint.ui.pages.batch import _outcome, _switcher_label
 from papermint.ui.pages.style_studio import _count
 from papermint.ui.styles import build_stylesheet
-from papermint.ui.theme import COLOR, band_color, css_variables
+from papermint.ui.theme import (
+    ALPHA,
+    COLOR,
+    LIGHT_ALPHA,
+    LIGHT_COLOR,
+    band_color,
+    css_variables,
+)
 
 
 @pytest.fixture
@@ -103,7 +110,22 @@ def test_every_token_becomes_a_css_variable():
 def test_confidence_bands_map_to_distinct_colours():
     colours = {band_color(band) for band in ConfidenceBand}
     assert len(colours) == 3
-    assert band_color(ConfidenceBand.HIGH) == COLOR["positive"]
+    # A card writes this into its own style attribute, so it must be a
+    # reference the current palette resolves, not a literal frozen at import.
+    assert band_color(ConfidenceBand.HIGH) == "var(--pm-color-positive)"
+    assert COLOR["positive"] != LIGHT_COLOR["positive"]
+
+
+def test_both_palettes_define_every_token():
+    assert set(LIGHT_COLOR) == set(COLOR)
+    assert set(LIGHT_ALPHA) == set(ALPHA)
+
+
+def test_each_mode_renders_its_own_palette():
+    assert "--pm-color-canvas: #0F172A;" in css_variables("dark")
+    assert "--pm-color-canvas: #F5F7FA;" in css_variables("light")
+    # An unknown mode must not take the page down mid-render.
+    assert css_variables("nonsense") == css_variables("dark")
 
 
 def test_icons_inherit_the_text_colour():
@@ -646,3 +668,36 @@ def test_the_formatter_batch_document_dropdown_selects_file():
     assert "pm_style_batch_doc" in harness.session_state
     harness.selectbox(key="pm_style_batch_doc").set_value("doc2.pdf").run()
     assert not harness.exception, [str(e.value) for e in harness.exception]
+
+
+# --- The theme switch ------------------------------------------------------
+
+
+def test_the_sidebar_offers_a_theme_switch():
+    harness = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    harness.run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+    assert harness.session_state["pm_theme_mode"] == "dark"
+    assert [p.options for p in harness.pills] == [["Dark", "Light"]]
+
+
+def test_choosing_light_repaints_the_whole_stylesheet():
+    # Every rule is written against a token, so swapping the :root block is the
+    # entire mechanism. No JavaScript, no reload, no second stylesheet.
+    harness = AppTest.from_file(str(APP_PATH), default_timeout=120)
+    harness.run()
+    assert any("#0F172A" in m.value for m in harness.markdown if "--pm-color-canvas" in m.value)
+
+    harness.pills[0].set_value("light").run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+    assert harness.session_state["pm_theme_mode"] == "light"
+    assert any("#F5F7FA" in m.value for m in harness.markdown if "--pm-color-canvas" in m.value)
+
+
+def test_a_card_is_painted_by_the_palette_not_by_a_literal(citation):
+    # The card writes --pm-band into its own style attribute. A literal there
+    # would freeze it to whichever palette was imported, and the light theme
+    # would never reach it.
+    markup = _card_markup(citation, 1)
+    assert "--pm-band:var(--pm-color-positive)" in markup
+    assert "#34D399" not in markup
