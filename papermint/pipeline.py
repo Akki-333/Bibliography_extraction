@@ -439,6 +439,35 @@ class PipelineService:
         style, _confidence = detect_style([segment])
         return parse_citation(segment, style)
 
+    def parse_references(self, text: str) -> list[Citation]:
+        """Parse one or more reference strings typed or pasted by a reader.
+
+        If the text contains multiple references, it is segmented into individual
+        entries and each is parsed. If it contains a single reference, a single-item
+        list is returned.
+
+        Args:
+            text: One or more references, as written.
+
+        Returns:
+            A list of parsed Citation objects.
+
+        Raises:
+            ParsingError: If the text is blank.
+        """
+        if not text or not text.strip():
+            raise ParsingError(
+                "There is nothing to parse.",
+                remedy="Paste one or more references, such as entries from a Works Cited page.",
+            )
+
+        segment = text.strip()
+        segments = split_citations(segment)
+        if len(segments) > 1:
+            style, _ = detect_style(segments)
+            return [parse_citation(s, style) for s in segments if s.strip()]
+        return [self.parse_reference(segment)]
+
     def process_batch(
         self,
         documents: Sequence[DocumentInput] | Iterable[DocumentInput],
