@@ -139,11 +139,12 @@ with its own search, sort, paging and export, and the merged bibliography for
 the whole run is a tab away rather than below everything.
 
 **Reference formatter.** Takes the references from the document you analysed,
-from the batch you processed, or one you paste,
-and sets them as a finished reference list in APA, MLA, IEEE or Chicago, with
-the same entry shown four ways for comparison. Beside it is an account of what
-that style is for and how an entry is built. Nothing is invented: an element
-your source never supplied is left out and named.
+from the batch you processed (either as a merged library or narrowed to a
+specific file), or references you paste, and sets them as a publication-ready
+reference list in APA, MLA, IEEE or Chicago, with the same entry shown four ways
+for comparison. Missing elements are left out rather than invented, with an
+optional audit toggle to inspect source omissions without cluttering the
+printed list.
 
 Nothing on any page is discarded when you navigate away. Your document, your
 search, your sort order and your corrections are all still there when you come
