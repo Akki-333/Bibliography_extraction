@@ -390,7 +390,8 @@ def _render_library(result: BatchResult) -> None:
     Args:
         result: The aggregated batch result.
     """
-    citations = result.citations
+    citations = result.unique_citations
+    duplicates = result.duplicate_count
     if not citations:
         empty_state(
             "Nothing to export yet",
@@ -414,10 +415,20 @@ def _render_library(result: BatchResult) -> None:
     )
     st.divider()
     sources = sum(1 for f in result.files if f.citation_count)
-    section_header(
-        "Every reference in this run",
-        f"from {sources} file{'' if sources == 1 else 's'}",
-    )
+    note = f"from {sources} file{'' if sources == 1 else 's'}"
+    if duplicates:
+        note += f" · {duplicates} duplicate{'' if duplicates == 1 else 's'} merged"
+    section_header("Every reference in this run", note)
+    if duplicates:
+        notice(
+            f"{duplicates} duplicate{'' if duplicates == 1 else 's'} merged",
+            "Entries carrying the same DOI, or the same title and year, were the "
+            "same work cited by more than one of your documents. The fullest "
+            "record was kept and every file it appeared in is named on it. "
+            "Anything without that much identity was left alone.",
+            tone="info",
+        )
+        st.write("")
     render_citation_browser(
         citations,
         scope="batchlib",

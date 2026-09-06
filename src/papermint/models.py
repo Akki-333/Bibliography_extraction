@@ -202,6 +202,9 @@ class Citation(BaseModel):
     entry_type: EntryType = EntryType.ARTICLE
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     source_file: str = ""
+    #: Every file a merged work appeared in. Empty unless deduplication
+    #: combined this entry with another, so a single document is unchanged.
+    merged_sources: list[str] = Field(default_factory=list)
     edited: bool = False
 
     # -- Identity -----------------------------------------------------------
@@ -467,6 +470,26 @@ class BatchResult(BaseModel):
     def citation_count(self) -> int:
         """Return the total number of citations across the run."""
         return len(self.citations)
+
+    @property
+    def unique_citations(self) -> list[Citation]:
+        """Return the run's citations with certain duplicates merged.
+
+        Imported here rather than at module scope because
+        :mod:`papermint.dedupe` imports this module.
+        """
+        from papermint.dedupe import deduplicate
+
+        merged, _removed = deduplicate(self.citations)
+        return merged
+
+    @property
+    def duplicate_count(self) -> int:
+        """Return how many entries were the same work as an earlier one."""
+        from papermint.dedupe import deduplicate
+
+        _merged, removed = deduplicate(self.citations)
+        return removed
 
     @property
     def average_confidence(self) -> float:
