@@ -98,7 +98,7 @@ def render() -> None:
         APP_NAME,
         "A high-precision document intelligence platform engineered for academic "
         "literature extraction, reference management, and bibliographic data integrity.",
-        eyebrow="Academic Citation Intelligence",
+        eyebrow="Academic Reference Engine",
         eyebrow_icon="leaf",
     )
 
