@@ -11,7 +11,6 @@ or Chicago.
 [![Ruff](https://img.shields.io/badge/lint-ruff-34D399.svg)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-34D399.svg)](LICENSE)
 
-![The PaperMint document analyzer](assets/UI.png)
 
 ---
 
