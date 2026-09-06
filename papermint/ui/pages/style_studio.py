@@ -62,21 +62,14 @@ _PASTE_KEY = "pm_style_paste"
 _PARSED_KEY = "pm_style_parsed"
 _COMPARE_KEY = "pm_style_compare"
 _FILTER_KEY = "pm_style_filter"
+_BATCH_DOC_KEY = "pm_style_batch_doc"
+_AUDIT_KEY = "pm_style_show_audit"
 
-_STICKY_KEYS = (_STYLE_KEY, _SOURCE_KEY, _PASTE_KEY, _FILTER_KEY)
+_STICKY_KEYS = (_STYLE_KEY, _SOURCE_KEY, _PASTE_KEY, _FILTER_KEY, _BATCH_DOC_KEY, _AUDIT_KEY)
 
-#: The three ways references can arrive on this page.
-#:
-#: The batch route was missing until a reader processed a batch, found the page
-#: offering only the paste box, and pasted the *title* off a citation card to
-#: see it formatted. They got a different reading of it than the card showed
-#: and reasonably concluded the two screens disagreed. They did not: the card
-#: had parsed a whole catalogue record and the paste box was given twenty-two
-#: characters of it. The fix is to carry the entry across rather than make
-#: anyone retype it.
 _FROM_ANALYZER = "The document I analysed"
 _FROM_BATCH = "The batch I processed"
-_FROM_PASTE = "One reference I paste"
+_FROM_PASTE = "Paste reference(s)"
 
 #: How far into a list the entrance cascade keeps growing before the delay is
 #: held constant, so a hundred-entry bibliography does not take six seconds to
@@ -178,12 +171,13 @@ def _count(number: int, noun: str) -> str:
     return f"{number} {plural}"
 
 
-def _reference_markup(rendered: FormattedReference, position: int) -> str:
+def _reference_markup(rendered: FormattedReference, position: int, show_audit: bool = False) -> str:
     """Render one formatted reference as a hanging-indent line.
 
     Args:
         rendered: The formatted reference.
         position: Its place in the entrance cascade.
+        show_audit: Whether to show omitted-field audit notes.
 
     Returns:
         The line's HTML.
@@ -198,22 +192,25 @@ def _reference_markup(rendered: FormattedReference, position: int) -> str:
 
     marker = f'<span class="pm-refmark">{esc(rendered.marker)}</span>' if rendered.marker else ""
     gap = ""
-    if rendered.omitted:
+    if show_audit and rendered.omitted:
         gap = (
-            '<span class="pm-refgap">Absent from the source, so absent here: '
-            f"{esc(', '.join(rendered.omitted))}</span>"
+            f'<div class="pm-refgap">Omitted from source: {esc(", ".join(rendered.omitted))}</div>'
         )
     step = min(position, _MAX_REVEAL_STEP)
     return f'<div class="pm-refline" style="--pm-step:{step};">{marker}{text}{gap}</div>'
 
 
-def _render_reference_list(rendered: list[FormattedReference]) -> None:
+def _render_reference_list(rendered: list[FormattedReference], show_audit: bool = False) -> None:
     """Render a whole formatted list the way it is set on paper.
 
     Args:
         rendered: The formatted references, in list order.
+        show_audit: Whether to show omitted-field audit notes.
     """
-    lines = "".join(_reference_markup(ref, position) for position, ref in enumerate(rendered))
+    lines = "".join(
+        _reference_markup(ref, position, show_audit=show_audit)
+        for position, ref in enumerate(rendered)
+    )
     render_html(compact(f'<div class="pm-reflist">{lines}</div>'))
 
 
@@ -299,28 +296,28 @@ def _render_output(citations: list[Citation], guide: StyleGuide) -> None:
     rendered = format_reference_list(citations, guide.style)
     incomplete = sum(1 for ref in rendered if not ref.complete)
 
-    section_header(
-        guide.list_heading,
-        f"{_count(len(rendered), 'entry')} · {guide.ordering.split('.')[0].lower()}",
-    )
-    if incomplete:
-        if incomplete == len(rendered) == 1:
-            headline = "This entry is missing an element"
-        elif incomplete == len(rendered):
-            headline = f"All {_count(incomplete, 'entry')} are missing an element"
-        else:
-            verb = "is" if incomplete == 1 else "are"
-            headline = f"{incomplete} of {_count(len(rendered), 'entry')} {verb} missing an element"
-        notice(
-            headline,
-            "Those elements were never found in the source document, so they are "
-            "left out here rather than invented. Each affected entry names what it "
-            "is missing, and the analyzer's inline editor can supply them.",
-            tone="caution",
+    total_str = _count(len(rendered), "entry")
+    ordering_str = guide.ordering.split(".")[0].lower()
+    if incomplete == 0:
+        meta_str = f"{total_str} · {ordering_str} · All complete"
+    else:
+        meta_str = (
+            f"{total_str} · {ordering_str} · {len(rendered) - incomplete} complete, "
+            f"{incomplete} need review"
         )
-        st.write("")
 
-    _render_reference_list(rendered)
+    hdr_col, toggle_col = st.columns([3, 1], vertical_alignment="bottom")
+    with hdr_col:
+        section_header(guide.list_heading, meta_str)
+    with toggle_col:
+        show_audit = st.toggle(
+            "Audit hints",
+            value=False,
+            key=_AUDIT_KEY,
+            help="Show omitted-element notes under references that lack optional fields.",
+        )
+
+    _render_reference_list(rendered, show_audit=show_audit)
 
     st.write("")
     text = _plain_text(rendered, guide.list_heading)
@@ -373,7 +370,9 @@ def _render_comparison(citations: list[Citation]) -> None:
         rendered = format_reference_list([citation], style)[0]
         chip_row([("quote", guide.short_name)], accent_first=True)
         render_html(
-            compact(f'<div class="pm-reflist">{_reference_markup(rendered, position)}</div>')
+            compact(
+                f'<div class="pm-reflist">{_reference_markup(rendered, position, show_audit=False)}</div>'
+            )
         )
         st.write("")
 
@@ -383,27 +382,42 @@ def _render_comparison(citations: list[Citation]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _parse_pasted() -> Citation | None:
-    """Read a pasted reference and parse it through the service.
+def _parse_pasted() -> list[Citation]:
+    """Read one or more pasted references and parse them through the pipeline.
+
+    Supports pasting a single reference or a multi-entry bibliography block.
 
     Returns:
-        The parsed citation, or None when nothing has been submitted yet.
+        The parsed citations, or an empty list when nothing has been submitted yet.
     """
     st.text_area(
-        "Reference",
+        "Reference(s)",
         placeholder=(
+            "Paste one reference or a full bibliography list:\n\n"
             "Ambler, Marjane. Women Leaders in Indian Education. "
-            "Tribal College, vol. 3, no. 4, 1992, pp. 10-15."
+            "Tribal College, vol. 3, no. 4, 1992, pp. 10-15.\n\n"
+            "Bastidas, V. M., Emary, C., and Brandes, T., Nonequilibrium quantum phase "
+            "transitions in the Dicke model, Phys. Rev. E 87, 052110 (2012)."
         ),
-        height=110,
+        height=130,
         key=_PASTE_KEY,
         label_visibility="collapsed",
     )
-    if not st.button("Read this reference", type="primary", key="pm_style_parse"):
-        return st.session_state.get(_PARSED_KEY)
+    if not st.button("Read reference(s)", type="primary", key="pm_style_parse"):
+        cached = st.session_state.get(_PARSED_KEY)
+        if isinstance(cached, list):
+            return [c for c in cached if isinstance(c, Citation)]
+        if isinstance(cached, Citation):
+            return [cached]
+        return []
+
+    raw = st.session_state.get(_PASTE_KEY, "").strip()
+    if not raw:
+        st.session_state[_PARSED_KEY] = []
+        return []
 
     try:
-        parsed = PipelineService().parse_reference(st.session_state.get(_PASTE_KEY, ""))
+        parsed = PipelineService().parse_references(raw)
     except PaperMintError as err:
         notice(
             "That could not be read",
@@ -411,16 +425,16 @@ def _parse_pasted() -> Citation | None:
             tone="caution",
             details=[err.remedy] if err.remedy else None,
         )
-        return None
+        return []
     except Exception:
-        logger.exception("Unexpected failure parsing a pasted reference")
+        logger.exception("Unexpected failure parsing pasted reference(s)")
         notice(
             "Something went wrong",
             "An unexpected error interrupted parsing. The details were written to "
             "the application log.",
             tone="critical",
         )
-        return None
+        return []
 
     st.session_state[_PARSED_KEY] = parsed
     return parsed
@@ -550,13 +564,50 @@ def render() -> None:
     elif source == _FROM_BATCH:
         result = st.session_state.get(_BATCH_RESULT)
         files = getattr(result, "file_count", 0)
-        citations = _narrowed(from_batch, f"{_count(files, 'file')} in your last batch")
+        file_results = getattr(result, "files", []) or []
+        docs_with_cits = [f for f in file_results if getattr(f, "citation_count", 0) > 0]
+
+        if len(docs_with_cits) > 1:
+            doc_options = ["All files (Merged library)", *(f.filename for f in docs_with_cits)]
+            if st.session_state.get(_BATCH_DOC_KEY) not in doc_options:
+                st.session_state[_BATCH_DOC_KEY] = doc_options[0]
+
+            chosen_doc = st.selectbox(
+                "Document from batch",
+                options=doc_options,
+                key=_BATCH_DOC_KEY,
+                help="Choose whether to format the whole batch or references from one specific document.",
+            )
+            if chosen_doc == "All files (Merged library)":
+                source_citations = from_batch
+                origin = f"{_count(files, 'file')} in your last batch"
+            else:
+                target_f = next((f for f in docs_with_cits if f.filename == chosen_doc), None)
+                source_citations = (
+                    list(target_f.result.citations) if target_f and target_f.result else []
+                )
+                origin = chosen_doc
+        else:
+            source_citations = from_batch
+            origin = f"{_count(files, 'file')} in your last batch"
+
+        citations = _narrowed(source_citations, origin)
     else:
-        parsed = _parse_pasted()
-        if parsed is not None:
-            st.write("")
-            render_citation_card(parsed, 1)
-            citations = [parsed]
+        parsed_citations = _parse_pasted()
+        if parsed_citations:
+            if len(parsed_citations) == 1:
+                st.write("")
+                render_citation_card(parsed_citations[0], 1)
+            else:
+                st.write("")
+                with st.expander(
+                    f"Parsed {_count(len(parsed_citations), 'reference')} from text",
+                    expanded=False,
+                ):
+                    for idx, cit in enumerate(parsed_citations, start=1):
+                        render_citation_card(cit, idx)
+                        st.write("")
+            citations = parsed_citations
 
     st.divider()
 
@@ -573,9 +624,9 @@ def render() -> None:
         )
     else:
         empty_state(
-            "Paste a reference above",
-            "One line from a Works Cited page is enough. PaperMint reads it into "
-            "fields and sets it in all four styles.",
+            "Paste reference(s) above",
+            "One or more lines from a Works Cited page. PaperMint reads them into "
+            "fields and sets them in all four styles.",
             icon_name="quote",
         )
 

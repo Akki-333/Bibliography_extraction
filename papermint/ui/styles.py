@@ -945,12 +945,16 @@ def _components() -> str:
     margin-right: var(--pm-space-2);
 }
 .pm-refgap {
-    display: block;
+    display: inline-block;
     margin-top: var(--pm-space-1);
     text-indent: 0;
     font-family: var(--pm-font-ui);
     font-size: var(--pm-text-xs);
-    color: var(--pm-color-caution);
+    color: var(--pm-color-muted);
+    background: var(--pm-fill-subtle-04);
+    border: 1px solid var(--pm-fill-subtle-08);
+    border-radius: var(--pm-radius-sm);
+    padding: 1px var(--pm-space-2);
 }
 
 /* --- Batch workbench -------------------------------------------------- */

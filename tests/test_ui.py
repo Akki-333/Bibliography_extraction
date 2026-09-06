@@ -582,3 +582,67 @@ def test_the_formatter_narrows_a_long_list_and_says_so():
 
     assert not harness.exception, [str(e.value) for e in harness.exception]
     assert any("Nothing matches that filter" in m.value for m in harness.markdown)
+
+
+def test_the_formatter_renders_cleanly_without_caution_notice():
+    # References missing elements should not produce a loud yellow caution notice banner.
+    harness = AppTest.from_string(_STYLES_SCRIPT, default_timeout=120)
+    incomplete_cit = Citation(
+        title="An Untitled Note",
+        year="1999",
+        confidence=0.5,
+    )
+    harness.session_state["pm_extract_citations"] = [incomplete_cit]
+    harness.run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+
+    caution_notices = [m.value for m in harness.markdown if "missing an element" in m.value]
+    assert len(caution_notices) == 0
+
+
+def test_the_formatter_parses_multiple_pasted_references():
+    harness = AppTest.from_string(_STYLES_SCRIPT, default_timeout=120)
+    harness.run()
+    harness.radio[0].set_value("Paste reference(s)").run()
+
+    text = (
+        "Smith, J. A. (2020). Machine learning in citation parsing. Journal of Bibliometrics.\n\n"
+        "Doe, Jane. (2021). Foundations of Data. Science Press."
+    )
+    harness.text_area(key="pm_style_paste").set_value(text).run()
+    harness.button(key="pm_style_parse").click().run()
+
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+    assert "pm_style_parsed" in harness.session_state
+    parsed = harness.session_state["pm_style_parsed"]
+    assert len(parsed) == 2
+
+
+def test_the_formatter_batch_document_dropdown_selects_file():
+    c1 = Citation(
+        title="Doc 1 Ref", authors=[Author(family="A")], year="2020", source_file="doc1.pdf"
+    )
+    c2 = Citation(
+        title="Doc 2 Ref", authors=[Author(family="B")], year="2021", source_file="doc2.pdf"
+    )
+    batch = BatchResult(
+        files=[
+            BatchFileResult(
+                filename="doc1.pdf",
+                result=ExtractionResult(citations=[c1], source_filename="doc1.pdf"),
+            ),
+            BatchFileResult(
+                filename="doc2.pdf",
+                result=ExtractionResult(citations=[c2], source_filename="doc2.pdf"),
+            ),
+        ],
+        duration_ms=500,
+    )
+    harness = AppTest.from_string(_STYLES_SCRIPT, default_timeout=120)
+    harness.session_state["pm_batch_result"] = batch
+    harness.run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
+
+    assert "pm_style_batch_doc" in harness.session_state
+    harness.selectbox(key="pm_style_batch_doc").set_value("doc2.pdf").run()
+    assert not harness.exception, [str(e.value) for e in harness.exception]
