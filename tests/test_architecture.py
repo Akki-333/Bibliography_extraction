@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-PACKAGE_ROOT = Path(__file__).resolve().parent.parent / "papermint"
-PROJECT_ROOT = PACKAGE_ROOT.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PACKAGE_ROOT = PROJECT_ROOT / "src" / "papermint"
 
 #: Packages that must never import Streamlit.
 DOMAIN_PACKAGES = ("extractors", "parsers", "enrichment", "exporters", "formatters")

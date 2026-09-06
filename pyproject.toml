@@ -43,11 +43,17 @@ dev = [
 [project.scripts]
 papermint = "papermint.cli:main"
 
+# The package lives under src/ so that an import of "papermint" can only
+# ever resolve to the installed distribution, never to a directory that
+# happens to sit in the working directory.
+[tool.hatch.build.targets.wheel]
+packages = ["src/papermint"]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra -q --import-mode=importlib"
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -87,7 +93,7 @@ ignore = [
 "tests/*" = ["ARG", "TRY", "PTH"]
 # The normaliser's whole purpose is to map ambiguous Unicode punctuation onto
 # ASCII, so those characters must appear literally in its translation table.
-"papermint/parsers/text_normalizer.py" = ["RUF001"]
+"src/papermint/parsers/text_normalizer.py" = ["RUF001"]
 "tests/test_normalization.py" = ["RUF001"]
 
 [tool.ruff.lint.isort]

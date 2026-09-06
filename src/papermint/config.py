@@ -22,7 +22,9 @@ APP_REPO_URL = "https://github.com/Akki-333/PaperMint"
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+#: The repository root. Three levels up, because this module sits at
+#: ``src/papermint/config.py`` under the src layout.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 ASSETS_DIR = PROJECT_ROOT / "assets"
 
 # ---------------------------------------------------------------------------

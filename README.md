@@ -315,49 +315,70 @@ document.
 
 ## Project structure
 
+The package lives under `src/`, which is the layout the Python Packaging
+Authority recommends and the reason `import papermint` can only ever resolve to
+the installed distribution — never to a directory that happens to be sitting in
+the working directory. The repository root therefore holds project files and
+nothing else: what you configure, what you read, and the four directories the
+work lives in.
+
 ```
 PaperMint/
+├── .github/workflows/ci.yml        # Pytest and ruff gates on every push
+├── .streamlit/config.toml          # Streamlit theme, matching ui/theme.py
+├── assets/                         # Screenshots and sample documents
+├── docs/                           # Architecture and engineering specifications
+├── src/
+│   └── papermint/
+│       ├── config.py               # Constants and thresholds
+│       ├── models.py               # Pydantic models and enums
+│       ├── errors.py               # PaperMintError hierarchy
+│       ├── pipeline.py             # PipelineService, the orchestration layer
+│       ├── cli.py                  # Headless entry point
+│       ├── extractors/
+│       │   ├── base.py             # BaseExtractor, ExtractedDocument
+│       │   ├── registry.py         # MIME and extension resolution
+│       │   └── pdf_ / image_ / docx_ / pptx_extractor.py
+│       ├── parsers/
+│       │   ├── text_normalizer.py  # Ligatures, hyphenation, page furniture
+│       │   ├── bibliography_detector.py
+│       │   ├── citation_splitter.py
+│       │   ├── citation_parser.py
+│       │   ├── style_detector.py
+│       │   └── summarizer.py
+│       ├── formatters/
+│       │   └── reference_formatter.py   # APA, MLA, IEEE, Chicago and their guides
+│       ├── enrichment/crossref.py
+│       ├── exporters/              # bibtex, ris, csv, docx, pdf
+│       └── ui/                     # Streamlit lives only here
+│           ├── theme.py            # Design tokens
+│           ├── icons.py            # Inline SVG set
+│           ├── html.py             # Escaping and safe rendering
+│           ├── styles.py           # Stylesheet built from tokens
+│           ├── navigation.py       # Routes
+│           ├── state.py            # Widget state that survives a page switch
+│           ├── components/         # primitives, citation_card, citation_browser,
+│           │                       #   export_panel, progress, file_uploader
+│           └── pages/              # home, extract, batch, style_studio, about
+├── tests/                          # 459 tests, no network calls
+│   ├── test_architecture.py        # Enforces the layering rules (241)
+│   ├── test_ui.py                  # Components, state and every page (58)
+│   ├── test_normalization.py       # Text repair and parser guards (44)
+│   ├── test_parsers.py             # Detection and multi-block collection (40)
+│   ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
+│   ├── test_formatters.py          # Style rendering and its honesty rules (23)
+│   └── test_models · test_exporters · test_enrichment
 ├── app.py                          # Entry point: config, logging, routing
-├── pyproject.toml
-├── papermint/
-│   ├── config.py                   # Constants and thresholds
-│   ├── models.py                   # Pydantic models and enums
-│   ├── errors.py                   # PaperMintError hierarchy
-│   ├── pipeline.py                 # PipelineService, the orchestration layer
-│   ├── cli.py                      # Headless entry point
-│   ├── extractors/
-│   │   ├── base.py                 # BaseExtractor, ExtractedDocument
-│   │   ├── registry.py             # MIME and extension resolution
-│   │   └── pdf_ / image_ / docx_ / pptx_extractor.py
-│   ├── parsers/
-│   │   ├── text_normalizer.py      # Ligatures, hyphenation, page furniture
-│   │   ├── bibliography_detector.py
-│   │   ├── citation_splitter.py
-│   │   ├── citation_parser.py
-│   │   ├── style_detector.py
-│   │   └── summarizer.py
-│   ├── formatters/
-│   │   └── reference_formatter.py  # APA, MLA, IEEE, Chicago rendering and guides
-│   ├── enrichment/crossref.py
-│   ├── exporters/                  # bibtex, ris, csv, docx, pdf
-│   └── ui/                         # Streamlit lives only here
-│       ├── theme.py                # Design tokens
-│       ├── icons.py                # Inline SVG set
-│       ├── html.py                 # Escaping and safe rendering
-│       ├── styles.py               # Stylesheet built from tokens
-│       ├── navigation.py           # Routes
-│       ├── state.py                # Widget state that survives a page switch
-│       ├── components/             # primitives, citation_card, citation_browser, export_panel, progress, file_uploader
-│       └── pages/                  # home, extract, batch, style_studio, about
-└── tests/                          # 456 tests, no network calls
-    ├── test_architecture.py        # Enforces the layering rules (241)
-    ├── test_ui.py                  # Components, state and every page (58)
-    ├── test_normalization.py       # Text repair and parser guards (44)
-    ├── test_parsers.py             # Detection and multi-block collection (40)
-    ├── test_pipeline.py            # Orchestration, batch, registry, CLI (25)
-    ├── test_formatters.py          # Style rendering and its honesty rules (23)
-    └── test_models · test_exporters · test_enrichment
+├── pyproject.toml                  # Packaging, dependencies, ruff and pytest
+├── packages.txt                    # OS packages for deployment (tesseract-ocr)
+├── CHANGELOG.md
+├── LICENSE
+└── README.md
 ```
+
+`app.py` stays at the root because it is the path you hand to Streamlit, not a
+module anyone imports. Everything it does is configure the page and call the
+router.
 
 ---
 
@@ -506,6 +527,28 @@ in memory with PyMuPDF.
 `Citation.source_file` is already populated by the pipeline and is shown on
 every entry in the batch page's merged library, so both the data and the
 surface for phase 4 are in place. Batch processing is currently sequential.
+
+---
+
+## What changed in 2.1.4
+
+The repository moved to the src layout.
+
+**Changed** - `papermint/` is now `src/papermint/`. The root no longer carries a
+directory sharing the project's own name, and holds only project files: what you
+configure, what you read, and the four directories the work lives in. The layout
+is the one the Python Packaging Authority recommends, and it means `import
+papermint` can only ever resolve to the installed distribution, never to a
+directory that happens to be in the working directory - so the suite tests what
+a user would actually install.
+
+`app.py` stays at the root, because it is the path handed to `streamlit run`
+rather than a module anyone imports.
+
+Everything that computed a path was moved with it: hatchling's wheel target,
+pytest's `pythonpath`, ruff's per-file ignores, `config.PROJECT_ROOT`, and the
+architecture gate's `PACKAGE_ROOT`. Every file moved with `git mv`, so history
+follows the code.
 
 ---
 
