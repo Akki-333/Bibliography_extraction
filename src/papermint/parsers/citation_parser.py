@@ -96,6 +96,92 @@ _ET_AL = re.compile(r"[ \t]*,?[ \t]*et[ \t]+al\.?", re.IGNORECASE)
 #: outside the name match, as in "Cambridge, Mass.:".
 _IMPRINT_COLON = re.compile(r"[ \t]*\.?[ \t]*:")
 
+#: Place abbreviations that a catalogue puts where a citation puts initials.
+#:
+#: The colon rule above covers only the punctuation a Chicago-style imprint
+#: uses. Catalogue records - ERIC's especially - just as often write the place
+#: with a full stop or a comma:
+#:
+#:     Washington, D.C. Childrens Books, 1933. Curriculum-Bull-11 61p.
+#:     New York, N.Y., Random House, 1999.
+#:     Boston, Mass. Beacon Press, 1961.
+#:
+#: No punctuation is left to separate those from "Smith, J. A.", so the
+#: discrimination has to come from the token itself. This is a closed, auditable
+#: set of US state, territory and Canadian province abbreviations - not a list
+#: of place names, which would be unbounded, and not entity recognition, which
+#: section 7 rules out because it guesses.
+#:
+#: It can only ever *remove* an author, never invent one, so its failure mode
+#: points the safe way: an entry loses a name it should have kept rather than
+#: gaining one that was never there.
+_PLACE_ABBREVIATION: frozenset[str] = frozenset(
+    {
+        # Traditional abbreviations, which is how imprints are actually set.
+        "Ala.",
+        "Ariz.",
+        "Ark.",
+        "Calif.",
+        "Colo.",
+        "Conn.",
+        "D.C.",
+        "Del.",
+        "Fla.",
+        "Ga.",
+        "Ill.",
+        "Ind.",
+        "Kan.",
+        "Kans.",
+        "Ky.",
+        "La.",
+        "Mass.",
+        "Md.",
+        "Mich.",
+        "Minn.",
+        "Miss.",
+        "Mo.",
+        "Mont.",
+        "Neb.",
+        "Nebr.",
+        "Nev.",
+        "N.C.",
+        "N.D.",
+        "N.H.",
+        "N.J.",
+        "N.M.",
+        "N.Y.",
+        "Okla.",
+        "Ore.",
+        "Oreg.",
+        "Pa.",
+        "Penn.",
+        "R.I.",
+        "S.C.",
+        "S.D.",
+        "Tenn.",
+        "Tex.",
+        "Va.",
+        "Vt.",
+        "Wash.",
+        "Wis.",
+        "Wisc.",
+        "W.Va.",
+        "Wyo.",
+        "P.R.",
+        "V.I.",
+        # Canadian provinces, which appear in the same position.
+        "Alta.",
+        "B.C.",
+        "Man.",
+        "N.B.",
+        "N.S.",
+        "Ont.",
+        "Que.",
+        "Sask.",
+    }
+)
+
+
 #: The closing "Journal Abbrev. Volume, Pages (Year)." of a numbered reference,
 #: which is the dominant form in physics, chemistry and the life sciences.
 _VENUE_TAIL = re.compile(
@@ -204,6 +290,41 @@ def _dedupe_authors(authors: list[Author]) -> list[Author]:
     return unique
 
 
+def _is_imprint_place(region: str, match: re.Match[str]) -> bool:
+    """Decide whether an inverted-name match is a publication place.
+
+    Two signals, either of which is decisive:
+
+    A **colon** directly after the candidate. No citation style puts one after
+    an author; an imprint puts one after its place.
+
+    A **place abbreviation** where the given name would be. A catalogue writes
+    "Washington, D.C. Childrens Books, 1933" with no colon at all, and nothing
+    in the punctuation separates that from "Smith, J. A.", so the token has to
+    decide. Only the tight form counts: styles set initials with a space
+    between them, so "Smith, D. C." stays an author while "Washington, D.C."
+    does not. That is the one collision this rule can get wrong, and it errs
+    towards an empty field rather than an invented person.
+
+    Args:
+        region: The text being walked.
+        match: The inverted-name match under test.
+
+    Returns:
+        True when the match is a place rather than a person.
+    """
+    if _IMPRINT_COLON.match(region, match.end()):
+        return True
+
+    given = match.group(2).strip().rstrip(",")
+    if " " in given or "	" in given:
+        return False
+
+    # The abbreviation's own full stop can fall outside the match, as the name
+    # pattern stops at the word in "Boston, Mass." - so test both forms.
+    return given in _PLACE_ABBREVIATION or f"{given}." in _PLACE_ABBREVIATION
+
+
 def _match_author(
     region: str, position: int, *, allow_full_name: bool
 ) -> tuple[Author, int] | None:
@@ -219,7 +340,7 @@ def _match_author(
         An ``(author, end_offset)`` pair, or None when no name starts here.
     """
     inverted = _INVERTED_UNIT.match(region, position)
-    if inverted and not _IMPRINT_COLON.match(region, inverted.end()):
+    if inverted and not _is_imprint_place(region, inverted):
         author = Author(
             family=inverted.group(1).strip(),
             given=_clean_given(inverted.group(2)),

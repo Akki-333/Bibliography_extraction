@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from papermint.models import CitationStyle
 from papermint.parsers.citation_parser import (
     is_bibliographic_entry,
@@ -382,6 +384,34 @@ def test_an_imprint_place_is_not_read_as_an_author():
 def test_an_abbreviated_state_in_an_imprint_is_not_read_as_an_author():
     citation = parse_citation("Cambridge, Mass.: Harvard University Press, 1987. A Report 44p.")
     assert citation.authors == []
+
+
+#: Every punctuation an imprint uses between its place and its publisher. The
+#: first fix for this covered only the colon, because the colon was the only
+#: form the reproduction happened to use; a catalogue writes the other three
+#: just as often, and they went on inventing a person for another release.
+IMPRINT_FORMS = [
+    "Washington, D.C.: Childrens Books, 1933. Curriculum-Bull-11 61p.",
+    "Washington, D.C. Childrens Books, 1933. Curriculum-Bull-11 61p.",
+    "Washington, D.C., Childrens Books, 1933. Curriculum-Bull-11 61p.",
+    "Washington, D.C.  Childrens Books, 1933.  61 p.  Curriculum-Bull-11",
+    "New York, N.Y. Random House, 1999. Some Report 44p.",
+    "Boston, Mass. Beacon Press, 1961. Another Title 12p.",
+    "Toronto, Ont. Univ of Toronto Press, 1975. A Study 30p.",
+]
+
+
+@pytest.mark.parametrize("entry", IMPRINT_FORMS)
+def test_no_imprint_punctuation_turns_a_place_into_a_person(entry: str):
+    assert parse_citation(entry).authors == []
+
+
+def test_spaced_initials_survive_the_place_guard():
+    # The one collision the abbreviation set can get wrong. Citation styles set
+    # initials with a space between them, so the tight "D.C." is a district and
+    # the spaced "D. C." is a person.
+    citation = parse_citation("Smith, D. C. (2011). Spaced initials must survive. Nature, 3, 1-4.")
+    assert [a.citation_name for a in citation.authors] == ["Smith, D. C."]
 
 
 def test_a_real_author_is_still_read_when_the_title_carries_a_colon():
