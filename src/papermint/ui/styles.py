@@ -116,6 +116,47 @@ def _chrome() -> str:
     border-right: 1px solid var(--pm-color-border);
 }
 
+/* The navigation, bound to our tokens.
+   Streamlit colours these from its own theme, which `.streamlit/config.toml`
+   fixes to the dark palette and which cannot change at runtime. Left alone,
+   the links kept their pale dark-theme text and disappeared entirely against
+   a light sidebar - the single worst thing about the first light build. Every
+   colour Streamlit would otherwise choose is therefore set here. */
+[data-testid="stSidebarNav"] a,
+[data-testid="stSidebarNavLink"] {
+    color: var(--pm-color-text-muted);
+    border-radius: var(--pm-radius-sm);
+    transition: background var(--pm-motion-fast), color var(--pm-motion-fast);
+}
+[data-testid="stSidebarNav"] a *,
+[data-testid="stSidebarNavLink"] * { color: inherit; }
+[data-testid="stSidebarNav"] a:hover,
+[data-testid="stSidebarNavLink"]:hover {
+    background: var(--pm-fill-accent-08);
+    color: var(--pm-color-text);
+}
+[data-testid="stSidebarNav"] a[aria-current="page"],
+[data-testid="stSidebarNavLink"][aria-current="page"] {
+    background: var(--pm-fill-accent-14);
+    color: var(--pm-color-accent-bright);
+    font-weight: 600;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] * { color: inherit; }
+
+/* The section labels above each group of routes. */
+[data-testid="stSidebarNav"] ul > div,
+[data-testid="stSidebarNavSeparator"] {
+    color: var(--pm-color-text-faint);
+    border-color: var(--pm-color-border);
+}
+
+/* Captions elsewhere inherit correctly; inside the sidebar they inherit the
+   framework's theme, so "Appearance" was invisible on the light ground. */
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {
+    color: var(--pm-color-text-faint);
+}
+
 hr, [data-testid="stDivider"] hr {
     border-color: var(--pm-color-border);
     margin: var(--pm-space-6) 0;
@@ -222,8 +263,21 @@ hr, [data-testid="stDivider"] hr {
     border-radius: var(--pm-radius-md);
     overflow: hidden;
 }
-[data-testid="stExpander"] summary { font-size: var(--pm-text-base); font-weight: 500; }
+[data-testid="stExpander"] summary {
+    font-size: var(--pm-text-base);
+    font-weight: 500;
+    background: var(--pm-color-surface);
+    color: var(--pm-color-text);
+}
+[data-testid="stExpander"] summary * { color: inherit; }
 [data-testid="stExpander"] summary:hover { color: var(--pm-color-accent-bright); }
+/* Streamlit paints the open panel from its own theme, which is why the
+   Settings block stayed dark while the rest of the sidebar went light. */
+[data-testid="stExpanderDetails"] {
+    background: var(--pm-color-surface);
+    color: var(--pm-color-text);
+}
+[data-testid="stExpanderIcon"] { color: var(--pm-color-text-muted); }
 
 /* --- Alerts ----------------------------------------------------------- */
 [data-testid="stAlertContainer"] {

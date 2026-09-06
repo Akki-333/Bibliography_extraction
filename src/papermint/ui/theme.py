@@ -68,38 +68,52 @@ ALPHA: Final[dict[str, str]] = {
 #: at #34D399 on white fails contrast for text, while the same hue at #059669
 #: passes and still reads as the same brand.
 LIGHT_COLOR: Final[dict[str, str]] = {
-    "accent": "#059669",
-    "accent-bright": "#047857",
+    # Deeper than the dark theme's mint, which washes out to nothing on white.
+    # #047857 clears 4.5:1 on every surface here, so the accent can carry text
+    # and not just decoration.
+    "accent": "#047857",
+    "accent-bright": "#065F46",
     "accent-deep": "#10B981",
     "accent-ink": "#FFFFFF",
-    "canvas": "#F5F7FA",
+    # Three real steps. The canvas is tinted so a white card lifts off it
+    # without needing a heavy border, and the sunken step is darker than the
+    # canvas so the sidebar reads as a distinct plane rather than a margin.
+    "canvas": "#EEF2F8",
     "surface": "#FFFFFF",
     "surface-raised": "#FFFFFF",
-    "surface-sunken": "#EEF2F7",
-    "border": "#DDE4EE",
-    "border-strong": "#B4C0D2",
-    "text": "#0F172A",
-    "text-muted": "#475569",
-    "text-faint": "#64748B",
-    "positive": "#059669",
-    "caution": "#B45309",
-    "critical": "#DC2626",
-    "info": "#2563EB",
+    "surface-sunken": "#E2E8F1",
+    # Borders that are actually visible. The old #DDE4EE vanished against a
+    # near-white canvas, which is half of why the theme looked washed out.
+    "border": "#BAC7DA",
+    "border-strong": "#94A3B8",
+    # A real hierarchy: 16:1, 8:1 and 5:1 against white. The old muted step sat
+    # too close to the faint one, so nothing looked deliberate.
+    "text": "#0B1220",
+    "text-muted": "#3E4C61",
+    "text-faint": "#5A6779",
+    # Saturated enough to read as status at chip size, dark enough to pass
+    # contrast as text on their own tints.
+    "positive": "#047857",
+    "caution": "#96540A",
+    "critical": "#C81E1E",
+    "info": "#1D4ED8",
 }
 
 #: Translucent fills for the light palette. Tints are stronger than their dark
 #: counterparts because a wash that reads clearly on slate disappears on white.
 LIGHT_ALPHA: Final[dict[str, str]] = {
-    "accent-00": "rgba(5, 150, 105, 0)",
-    "accent-08": "rgba(5, 150, 105, 0.08)",
-    "accent-14": "rgba(5, 150, 105, 0.13)",
-    "accent-24": "rgba(5, 150, 105, 0.26)",
-    "caution-12": "rgba(180, 83, 9, 0.10)",
-    "caution-28": "rgba(180, 83, 9, 0.26)",
-    "critical-12": "rgba(220, 38, 38, 0.09)",
-    "critical-28": "rgba(220, 38, 38, 0.24)",
-    "info-12": "rgba(37, 99, 235, 0.09)",
-    "shadow": "rgba(15, 23, 42, 0.13)",
+    "accent-00": "rgba(4, 120, 87, 0)",
+    "accent-08": "rgba(4, 120, 87, 0.07)",
+    "accent-14": "rgba(4, 120, 87, 0.12)",
+    "accent-24": "rgba(4, 120, 87, 0.28)",
+    "caution-12": "rgba(150, 84, 10, 0.11)",
+    "caution-28": "rgba(150, 84, 10, 0.30)",
+    "critical-12": "rgba(200, 30, 30, 0.10)",
+    "critical-28": "rgba(200, 30, 30, 0.28)",
+    "info-12": "rgba(29, 78, 216, 0.10)",
+    # Cool and soft. A light theme gets its depth from shadow, where a dark one
+    # gets it from a lighter surface, so this carries more weight here.
+    "shadow": "rgba(15, 23, 42, 0.10)",
 }
 
 #: The two palettes by name. ``mode`` travels as a plain string so that session

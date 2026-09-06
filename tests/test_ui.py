@@ -45,6 +45,7 @@ from papermint.ui.theme import (
     COLOR,
     LIGHT_ALPHA,
     LIGHT_COLOR,
+    PALETTES,
     band_color,
     css_variables,
 )
@@ -123,7 +124,7 @@ def test_both_palettes_define_every_token():
 
 def test_each_mode_renders_its_own_palette():
     assert "--pm-color-canvas: #0F172A;" in css_variables("dark")
-    assert "--pm-color-canvas: #F5F7FA;" in css_variables("light")
+    assert "--pm-color-canvas: #EEF2F8;" in css_variables("light")
     # An unknown mode must not take the page down mid-render.
     assert css_variables("nonsense") == css_variables("dark")
 
@@ -691,7 +692,7 @@ def test_choosing_light_repaints_the_whole_stylesheet():
     harness.pills[0].set_value("light").run()
     assert not harness.exception, [str(e.value) for e in harness.exception]
     assert harness.session_state["pm_theme_mode"] == "light"
-    assert any("#F5F7FA" in m.value for m in harness.markdown if "--pm-color-canvas" in m.value)
+    assert any("#EEF2F8" in m.value for m in harness.markdown if "--pm-color-canvas" in m.value)
 
 
 def test_a_card_is_painted_by_the_palette_not_by_a_literal(citation):
@@ -701,3 +702,104 @@ def test_a_card_is_painted_by_the_palette_not_by_a_literal(citation):
     markup = _card_markup(citation, 1)
     assert "--pm-band:var(--pm-color-positive)" in markup
     assert "#34D399" not in markup
+
+
+# --- Palette contrast ------------------------------------------------------
+
+
+def _channels(value: str) -> tuple[int, int, int]:
+    """Return the RGB channels of a ``#rrggbb`` colour."""
+    digits = value.lstrip("#")
+    return tuple(int(digits[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+def _composite(fill: str, background: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Flatten an ``rgba()`` fill onto an opaque background."""
+    red, green, blue, alpha = (float(p) for p in fill[fill.index("(") + 1 : -1].split(","))
+    return tuple(  # type: ignore[return-value]
+        round(c * alpha + b * (1 - alpha))
+        for c, b in zip((red, green, blue), background, strict=True)
+    )
+
+
+def _relative_luminance(colour: tuple[int, int, int]) -> float:
+    """Return WCAG relative luminance for an RGB triple."""
+
+    def channel(value: float) -> float:
+        value /= 255
+        return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
+
+    red, green, blue = (channel(c) for c in colour)
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+
+def _contrast(foreground: tuple[int, int, int], background: tuple[int, int, int]) -> float:
+    """Return the WCAG contrast ratio between two opaque colours."""
+    first, second = _relative_luminance(foreground), _relative_luminance(background)
+    lighter, darker = max(first, second), min(first, second)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _text_pairs(colour: dict[str, str], alpha: dict[str, str]) -> list[tuple[str, float]]:
+    """Return every foreground/background pair a reader actually reads."""
+    card = _channels(colour["surface"])
+    sidebar = _channels(colour["surface-sunken"])
+    return [
+        ("body on card", _contrast(_channels(colour["text"]), card)),
+        ("muted on card", _contrast(_channels(colour["text-muted"]), card)),
+        ("nav link on sidebar", _contrast(_channels(colour["text-muted"]), sidebar)),
+        ("caption on sidebar", _contrast(_channels(colour["text-faint"]), sidebar)),
+        ("faint on card", _contrast(_channels(colour["text-faint"]), card)),
+        ("accent on card", _contrast(_channels(colour["accent"]), card)),
+        (
+            "active nav on its tint",
+            _contrast(_channels(colour["accent-bright"]), _composite(alpha["accent-14"], sidebar)),
+        ),
+        (
+            "label on accent",
+            _contrast(_channels(colour["accent-ink"]), _channels(colour["accent"])),
+        ),
+        (
+            "caution on its tint",
+            _contrast(_channels(colour["caution"]), _composite(alpha["caution-12"], card)),
+        ),
+        (
+            "critical on its tint",
+            _contrast(_channels(colour["critical"]), _composite(alpha["critical-12"], card)),
+        ),
+        (
+            "info on its tint",
+            _contrast(_channels(colour["info"]), _composite(alpha["info-12"], card)),
+        ),
+    ]
+
+
+def test_the_light_palette_clears_wcag_aa():
+    # The first light build shipped a sidebar whose navigation was invisible
+    # and a caption at 3.9:1. Contrast is arithmetic, so it is measured rather
+    # than eyeballed, and a palette edit that regresses it fails here.
+    colour, alpha = PALETTES["light"]
+    failures = [
+        (name, round(ratio, 2)) for name, ratio in _text_pairs(colour, alpha) if ratio < 4.5
+    ]
+    assert not failures, failures
+
+
+#: The two dark-palette pairs that sit below AA today. Writing the exact set
+#: down, rather than lowering the threshold, means a third one cannot appear
+#: unnoticed. The owner scoped the palette work to the light theme, so these
+#: are recorded rather than changed.
+_KNOWN_DARK_GAPS = {"caption on sidebar", "faint on card"}
+
+
+def test_the_dark_palette_has_only_its_known_contrast_gaps():
+    colour, alpha = PALETTES["dark"]
+    below = {name for name, ratio in _text_pairs(colour, alpha) if ratio < 4.5}
+    assert below == _KNOWN_DARK_GAPS
+
+
+def test_the_light_palette_separates_its_three_surfaces():
+    # Canvas, card and sidebar must be three distinct planes, or a card has
+    # nothing to lift off and the page reads as one flat wash.
+    surfaces = {LIGHT_COLOR[name] for name in ("canvas", "surface", "surface-sunken")}
+    assert len(surfaces) == 3
